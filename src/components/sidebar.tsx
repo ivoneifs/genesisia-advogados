@@ -19,10 +19,12 @@ import {
   Users2,
   Scale,
   LifeBuoy,
+  Bot,
 } from "lucide-react";
 
 const NAV = [
   { href: "/dashboard", label: "Área de trabalho", icon: LayoutDashboard },
+  { href: "/assistente", label: "Assistente IA", icon: Bot, badge: "IA" },
   { href: "/kanban", label: "Gestão kanban", icon: Kanban },
   { href: "/agenda", label: "Agenda", icon: CalendarDays },
   { href: "/workflows", label: "Workflows", icon: Workflow },
