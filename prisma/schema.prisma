@@ -139,6 +139,9 @@ model Documento {
   titulo      String
   tipo        String   @default("OUTRO")
   observacoes String?
+  arquivoNome String?
+  arquivoTipo String?
+  arquivoTam  Int?
   createdAt   DateTime @default(now())
 
   processoId  String?
@@ -146,6 +149,16 @@ model Documento {
 
   clienteId   String?
   cliente     Cliente? @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+}
+
+model Workflow {
+  id         String   @id @default(cuid())
+  nome       String
+  gatilho    String
+  diasAntes  Int      @default(0)
+  ativo      Boolean  @default(true)
+  execucoes  Int      @default(0)
+  createdAt  DateTime @default(now())
 }
 
 model Atendimento {

@@ -18,7 +18,6 @@ import {
   Bell,
   Users2,
   Scale,
-  Lock,
   LifeBuoy,
 } from "lucide-react";
 
@@ -26,7 +25,7 @@ const NAV = [
   { href: "/dashboard", label: "Área de trabalho", icon: LayoutDashboard },
   { href: "/kanban", label: "Gestão kanban", icon: Kanban },
   { href: "/agenda", label: "Agenda", icon: CalendarDays },
-  { href: "/workflows", label: "Workflows", icon: Workflow, locked: true },
+  { href: "/workflows", label: "Workflows", icon: Workflow },
   { href: "/contatos", label: "Contatos", icon: BookUser },
   { href: "/atendimentos", label: "Atendimentos", icon: MessageCircle },
   { href: "/processos", label: "Processos e casos", icon: Gavel },
@@ -54,7 +53,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {NAV.map(({ href, label, icon: Icon, locked, badge }) => {
+        {NAV.map(({ href, label, icon: Icon, badge }) => {
           const active = pathname === href || pathname?.startsWith(href + "/");
           return (
             <Link
@@ -73,7 +72,6 @@ export default function Sidebar() {
                   {badge}
                 </span>
               )}
-              {locked && <Lock size={13} className="text-gray-400 shrink-0" />}
             </Link>
           );
         })}

@@ -2,10 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
+import { runWorkflows } from "@/lib/workflows";
 
 export async function createPublicacao(formData: FormData) {
   const conteudo = String(formData.get("conteudo") ?? "").trim();
   if (!conteudo) return;
+
+  const processoId = String(formData.get("processoId") ?? "") || null;
 
   await prisma.publicacao.create({
     data: {
@@ -14,11 +17,15 @@ export async function createPublicacao(formData: FormData) {
       dataPublicacao: formData.get("dataPublicacao")
         ? new Date(String(formData.get("dataPublicacao")))
         : null,
-      processoId: String(formData.get("processoId") ?? "") || null,
+      processoId,
     },
   });
 
+  await runWorkflows("PUBLICACAO_NOVA", { processoId });
+
   revalidatePath("/publicacoes");
+  revalidatePath("/agenda");
+  revalidatePath("/dashboard");
 }
 
 export async function vincularPublicacao(formData: FormData) {

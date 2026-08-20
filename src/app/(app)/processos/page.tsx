@@ -1,14 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/format";
-import {
-  Plus,
-  Printer,
-  FileSpreadsheet,
-  RefreshCw,
-  Search,
-  ChevronDown,
-} from "lucide-react";
+import { Plus, RefreshCw, Search, ChevronDown } from "lucide-react";
+import ProcessosToolbar from "@/components/processos-toolbar";
 
 export default async function ProcessosPage({
   searchParams,
@@ -49,20 +43,15 @@ export default async function ProcessosPage({
           Processos e casos
         </h1>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            title="Imprimir"
-            className="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
-          >
-            <Printer size={15} />
-          </button>
-          <button
-            type="button"
-            title="Exportar"
-            className="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
-          >
-            <FileSpreadsheet size={15} />
-          </button>
+          <ProcessosToolbar
+            rows={processos.map((p) => ({
+              numero: p.numero,
+              cliente: p.cliente.nome,
+              area: p.area ?? "",
+              status: p.status,
+              tribunal: [p.tribunal, p.vara].filter(Boolean).join(" - "),
+            }))}
+          />
           <Link
             href="/processos"
             title="Atualizar"

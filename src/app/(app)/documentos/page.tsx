@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { createDocumento, deleteDocumento } from "@/lib/actions/documentos";
-import { Trash2, Plus, FileText } from "lucide-react";
+import { Trash2, Plus, FileText, Download, Paperclip } from "lucide-react";
 
 const TIPOS = [
   { value: "PETICAO", label: "Petição" },
@@ -103,6 +103,16 @@ export default async function DocumentosPage() {
               ))}
             </select>
           </div>
+          <div className="min-w-[200px]">
+            <label className="block text-xs font-medium text-gray-500 mb-1">
+              Arquivo (opcional)
+            </label>
+            <input
+              type="file"
+              name="arquivo"
+              className="w-full text-xs text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-xs file:font-medium file:text-gray-700 hover:file:bg-gray-200"
+            />
+          </div>
           <button
             type="submit"
             className="inline-flex items-center gap-2 rounded-lg bg-[var(--brand)] hover:bg-[var(--brand-dark)] text-white text-sm font-medium px-4 py-2 transition-colors"
@@ -128,8 +138,11 @@ export default async function DocumentosPage() {
               <tr key={d.id} className="hover:bg-gray-50">
                 <td className="px-5 py-3 font-medium text-gray-900">
                   <div className="flex items-center gap-2">
-                    <FileText size={14} className="text-gray-400" />
+                    <FileText size={14} className="text-gray-400 shrink-0" />
                     {d.titulo}
+                    {d.arquivoNome && (
+                      <Paperclip size={12} className="text-gray-400 shrink-0" />
+                    )}
                   </div>
                 </td>
                 <td className="px-5 py-3 text-gray-600">
@@ -142,15 +155,26 @@ export default async function DocumentosPage() {
                   {formatDate(d.createdAt)}
                 </td>
                 <td className="px-5 py-3">
-                  <form action={deleteDocumento} className="flex justify-end">
-                    <input type="hidden" name="id" value={d.id} />
-                    <button
-                      type="submit"
-                      className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </form>
+                  <div className="flex items-center justify-end gap-1">
+                    {d.arquivoNome && (
+                      <a
+                        href={`/api/documentos/${d.id}`}
+                        title="Baixar arquivo"
+                        className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                      >
+                        <Download size={14} />
+                      </a>
+                    )}
+                    <form action={deleteDocumento}>
+                      <input type="hidden" name="id" value={d.id} />
+                      <button
+                        type="submit"
+                        className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             ))}

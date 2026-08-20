@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { runWorkflows } from "@/lib/workflows";
 
 function parseValor(v: FormDataEntryValue | null) {
   const s = String(v ?? "").replace(",", ".").trim();
@@ -67,11 +68,23 @@ export async function moveProcessoStatus(formData: FormData) {
   const status = String(formData.get("status") ?? "");
   if (!id || !status) return;
 
-  await prisma.processo.update({ where: { id }, data: { status } });
+  const processo = await prisma.processo.update({
+    where: { id },
+    data: { status },
+  });
+
+  if (status === "ARQUIVADO" || status === "ENCERRADO") {
+    await runWorkflows("PROCESSO_ENCERRADO", {
+      processoId: id,
+      processoNumero: processo.numero,
+    });
+  }
 
   revalidatePath("/kanban");
   revalidatePath("/processos");
   revalidatePath(`/processos/${id}`);
+  revalidatePath("/agenda");
+  revalidatePath("/dashboard");
 }
 
 export async function deleteProcesso(formData: FormData) {

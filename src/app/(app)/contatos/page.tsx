@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { createContato, deleteContato } from "@/lib/actions/contatos";
 import { Trash2, Plus } from "lucide-react";
@@ -109,7 +110,12 @@ export default async function ContatosPage() {
             {contatos.map((c) => (
               <tr key={c.id} className="hover:bg-gray-50">
                 <td className="px-5 py-3 font-medium text-gray-900">
-                  {c.nome}
+                  <Link
+                    href={`/contatos/${c.id}`}
+                    className="hover:text-[var(--brand)]"
+                  >
+                    {c.nome}
+                  </Link>
                 </td>
                 <td className="px-5 py-3 text-gray-600">
                   {TIPOS.find((t) => t.value === c.tipo)?.label ?? c.tipo}

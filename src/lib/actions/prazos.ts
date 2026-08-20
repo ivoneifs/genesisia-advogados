@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { runWorkflows } from "@/lib/workflows";
 
 export async function createPrazo(formData: FormData) {
   const titulo = String(formData.get("titulo") ?? "").trim();
@@ -11,17 +12,27 @@ export async function createPrazo(formData: FormData) {
   if (!titulo || !processoId || !dataVencimento) return;
 
   const session = await getSession();
+  const prioridade = String(formData.get("prioridade") ?? "NORMAL");
+  const vencimento = new Date(dataVencimento);
 
   await prisma.prazo.create({
     data: {
       titulo,
       processoId,
-      dataVencimento: new Date(dataVencimento),
+      dataVencimento: vencimento,
       descricao: String(formData.get("descricao") ?? "") || null,
-      prioridade: String(formData.get("prioridade") ?? "NORMAL"),
+      prioridade,
       responsavelId: session?.userId ?? null,
     },
   });
+
+  if (prioridade === "ALTA") {
+    await runWorkflows("PRAZO_ALTA", {
+      processoId,
+      prazoTitulo: titulo,
+      prazoVencimento: vencimento,
+    });
+  }
 
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/dashboard");
