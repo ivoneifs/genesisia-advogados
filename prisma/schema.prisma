@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("ADVOGADO")
+  createdAt DateTime @default(now())
+
+  processos Processo[]
+  prazos    Prazo[]
+  tarefas   Tarefa[]
+}
+
+model Cliente {
+  id          String   @id @default(cuid())
+  nome        String
+  tipo        String   @default("PF")
+  documento   String?
+  email       String?
+  telefone    String?
+  endereco    String?
+  observacoes String?
+  createdAt   DateTime @default(now())
+
+  processos   Processo[]
+  financeiros Financeiro[]
+}
+
+model Processo {
+  id             String   @id @default(cuid())
+  numero         String
+  area           String?
+  status         String   @default("ATIVO")
+  tribunal       String?
+  vara           String?
+  parteContraria String?
+  valorCausa     Float?
+  descricao      String?
+  createdAt      DateTime @default(now())
+
+  clienteId      String
+  cliente        Cliente  @relation(fields: [clienteId], references: [id])
+
+  responsavelId  String?
+  responsavel    User?    @relation(fields: [responsavelId], references: [id])
+
+  prazos         Prazo[]
+  tarefas        Tarefa[]
+  financeiros    Financeiro[]
+}
+
+model Prazo {
+  id             String   @id @default(cuid())
+  titulo         String
+  descricao      String?
+  dataVencimento DateTime
+  status         String   @default("PENDENTE")
+  prioridade     String   @default("NORMAL")
+  createdAt      DateTime @default(now())
+
+  processoId     String
+  processo       Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+
+  responsavelId  String?
+  responsavel    User?    @relation(fields: [responsavelId], references: [id])
+}
+
+model Tarefa {
+  id            String   @id @default(cuid())
+  titulo        String
+  descricao     String?
+  data          DateTime
+  tipo          String   @default("TAREFA")
+  concluida     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  processoId    String?
+  processo      Processo? @relation(fields: [processoId], references: [id], onDelete: SetNull)
+
+  responsavelId String?
+  responsavel   User?    @relation(fields: [responsavelId], references: [id])
+}
+
+model Financeiro {
+  id          String   @id @default(cuid())
+  tipo        String
+  descricao   String
+  valor       Float
+  vencimento  DateTime
+  status      String   @default("PENDENTE")
+  createdAt   DateTime @default(now())
+
+  clienteId   String?
+  cliente     Cliente? @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+
+  processoId  String?
+  processo    Processo? @relation(fields: [processoId], references: [id], onDelete: SetNull)
+}
