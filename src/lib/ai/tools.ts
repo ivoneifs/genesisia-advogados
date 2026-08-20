@@ -1,63 +1,78 @@
-import type Anthropic from "@anthropic-ai/sdk";
+import type OpenAI from "openai";
 import { prisma } from "@/lib/db";
 import { formatCurrency, formatDate } from "@/lib/format";
 
-export const tools: Anthropic.Tool[] = [
+export const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
-    name: "buscar_processos",
-    description:
-      "Busca processos do escritório por número, nome do cliente ou parte contrária. Retorna número, cliente, área, status e prazos pendentes.",
-    input_schema: {
-      type: "object",
-      properties: {
-        query: {
-          type: "string",
-          description: "Termo de busca (número, cliente ou parte contrária). Deixe vazio para listar os mais recentes.",
+    type: "function",
+    function: {
+      name: "buscar_processos",
+      description:
+        "Busca processos do escritório por número, nome do cliente ou parte contrária. Retorna número, cliente, área, status e prazos pendentes.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "Termo de busca (número, cliente ou parte contrária). Deixe vazio para listar os mais recentes.",
+          },
         },
       },
     },
   },
   {
-    name: "detalhe_processo",
-    description:
-      "Retorna todos os detalhes de um processo específico: dados gerais, prazos, tarefas da agenda e lançamentos financeiros vinculados.",
-    input_schema: {
-      type: "object",
-      properties: {
-        numero: { type: "string", description: "Número do processo (pode ser parcial)" },
+    type: "function",
+    function: {
+      name: "detalhe_processo",
+      description:
+        "Retorna todos os detalhes de um processo específico: dados gerais, prazos, tarefas da agenda e lançamentos financeiros vinculados.",
+      parameters: {
+        type: "object",
+        properties: {
+          numero: { type: "string", description: "Número do processo (pode ser parcial)" },
+        },
+        required: ["numero"],
       },
-      required: ["numero"],
     },
   },
   {
-    name: "buscar_prazos",
-    description:
-      "Lista prazos pendentes do escritório, ordenados por vencimento. Útil para responder 'quais meus prazos essa semana' ou 'o que está atrasado'.",
-    input_schema: {
-      type: "object",
-      properties: {
-        apenas_atrasados: {
-          type: "boolean",
-          description: "Se true, retorna apenas prazos já vencidos.",
+    type: "function",
+    function: {
+      name: "buscar_prazos",
+      description:
+        "Lista prazos pendentes do escritório, ordenados por vencimento. Útil para responder 'quais meus prazos essa semana' ou 'o que está atrasado'.",
+      parameters: {
+        type: "object",
+        properties: {
+          apenas_atrasados: {
+            type: "boolean",
+            description: "Se true, retorna apenas prazos já vencidos.",
+          },
         },
       },
     },
   },
   {
-    name: "buscar_clientes",
-    description: "Busca clientes cadastrados por nome. Retorna dados de contato e quantos processos cada um tem.",
-    input_schema: {
-      type: "object",
-      properties: {
-        query: { type: "string", description: "Nome ou parte do nome do cliente." },
+    type: "function",
+    function: {
+      name: "buscar_clientes",
+      description: "Busca clientes cadastrados por nome. Retorna dados de contato e quantos processos cada um tem.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Nome ou parte do nome do cliente." },
+        },
       },
     },
   },
   {
-    name: "resumo_financeiro",
-    description:
-      "Retorna o resumo financeiro do escritório: receitas recebidas, receitas pendentes e despesas pagas.",
-    input_schema: { type: "object", properties: {} },
+    type: "function",
+    function: {
+      name: "resumo_financeiro",
+      description:
+        "Retorna o resumo financeiro do escritório: receitas recebidas, receitas pendentes e despesas pagas.",
+      parameters: { type: "object", properties: {} },
+    },
   },
 ];
 
