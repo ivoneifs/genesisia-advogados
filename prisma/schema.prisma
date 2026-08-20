@@ -31,8 +31,10 @@ model Cliente {
   observacoes String?
   createdAt   DateTime @default(now())
 
-  processos   Processo[]
-  financeiros Financeiro[]
+  processos    Processo[]
+  financeiros  Financeiro[]
+  documentos   Documento[]
+  atendimentos Atendimento[]
 }
 
 model Processo {
@@ -56,6 +58,9 @@ model Processo {
   prazos         Prazo[]
   tarefas        Tarefa[]
   financeiros    Financeiro[]
+  documentos     Documento[]
+  publicacoes    Publicacao[]
+  atendimentos   Atendimento[]
 }
 
 model Prazo {
@@ -104,4 +109,55 @@ model Financeiro {
 
   processoId  String?
   processo    Processo? @relation(fields: [processoId], references: [id], onDelete: SetNull)
+}
+
+model Contato {
+  id          String   @id @default(cuid())
+  nome        String
+  tipo        String   @default("OUTRO")
+  email       String?
+  telefone    String?
+  empresa     String?
+  observacoes String?
+  createdAt   DateTime @default(now())
+}
+
+model Publicacao {
+  id             String    @id @default(cuid())
+  conteudo       String
+  diario         String?
+  dataPublicacao DateTime?
+  status         String    @default("NAO_TRATADA")
+  createdAt      DateTime  @default(now())
+
+  processoId     String?
+  processo       Processo? @relation(fields: [processoId], references: [id], onDelete: SetNull)
+}
+
+model Documento {
+  id          String   @id @default(cuid())
+  titulo      String
+  tipo        String   @default("OUTRO")
+  observacoes String?
+  createdAt   DateTime @default(now())
+
+  processoId  String?
+  processo    Processo? @relation(fields: [processoId], references: [id], onDelete: SetNull)
+
+  clienteId   String?
+  cliente     Cliente? @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+}
+
+model Atendimento {
+  id         String   @id @default(cuid())
+  titulo     String
+  descricao  String?
+  data       DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  clienteId  String
+  cliente    Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  processoId String?
+  processo   Processo? @relation(fields: [processoId], references: [id], onDelete: SetNull)
 }

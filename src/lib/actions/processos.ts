@@ -62,6 +62,18 @@ export async function updateProcesso(id: string, formData: FormData) {
   redirect(`/processos/${id}`);
 }
 
+export async function moveProcessoStatus(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const status = String(formData.get("status") ?? "");
+  if (!id || !status) return;
+
+  await prisma.processo.update({ where: { id }, data: { status } });
+
+  revalidatePath("/kanban");
+  revalidatePath("/processos");
+  revalidatePath(`/processos/${id}`);
+}
+
 export async function deleteProcesso(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
