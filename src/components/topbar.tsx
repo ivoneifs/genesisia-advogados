@@ -3,7 +3,13 @@
 import { LogOut } from "lucide-react";
 import { logoutAction } from "@/lib/actions/auth";
 
-export default function Topbar({ name }: { name: string }) {
+export default function Topbar({
+  name,
+  escritorioNome,
+}: {
+  name: string;
+  escritorioNome?: string;
+}) {
   const initials = name
     .split(" ")
     .slice(0, 2)
@@ -14,7 +20,13 @@ export default function Topbar({ name }: { name: string }) {
   return (
     <header className="h-16 border-b border-gray-200 bg-white flex items-center justify-between px-6 lg:px-8">
       <div className="md:hidden font-semibold text-gray-900">Genesis IA</div>
-      <div className="hidden md:block" />
+      <div className="hidden md:block">
+        {escritorioNome && (
+          <span className="text-sm font-medium text-gray-500">
+            {escritorioNome}
+          </span>
+        )}
+      </div>
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-full bg-[var(--brand)]/10 text-[var(--brand)] flex items-center justify-center text-xs font-semibold">

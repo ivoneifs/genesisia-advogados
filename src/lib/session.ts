@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 const COOKIE_NAME = "genesis_session";
 const secret = new TextEncoder().encode(
@@ -10,6 +11,8 @@ export type SessionPayload = {
   userId: string;
   name: string;
   email: string;
+  role: string;
+  escritorioId: string | null;
 };
 
 export async function createSession(payload: SessionPayload) {
@@ -44,6 +47,13 @@ export async function getSession(): Promise<SessionPayload | null> {
   } catch {
     return null;
   }
+}
+
+export async function requireEscritorioId(): Promise<string> {
+  const session = await getSession();
+  if (!session) redirect("/login");
+  if (!session.escritorioId) redirect("/admin/usuarios");
+  return session.escritorioId;
 }
 
 export { COOKIE_NAME };

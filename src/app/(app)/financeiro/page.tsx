@@ -7,26 +7,30 @@ import {
 } from "@/lib/actions/financeiro";
 import Badge from "@/components/badge";
 import { Trash2, Plus, CheckCircle2, Circle } from "lucide-react";
+import { requireEscritorioId } from "@/lib/session";
 
 export default async function FinanceiroPage() {
+  const escritorioId = await requireEscritorioId();
   const [lancamentos, clientes, processos, receitas, despesas] =
     await Promise.all([
       prisma.financeiro.findMany({
+        where: { escritorioId },
         orderBy: { vencimento: "asc" },
         include: { cliente: true, processo: true },
       }),
-      prisma.cliente.findMany({ orderBy: { nome: "asc" } }),
+      prisma.cliente.findMany({ where: { escritorioId }, orderBy: { nome: "asc" } }),
       prisma.processo.findMany({
+        where: { escritorioId },
         orderBy: { numero: "asc" },
         select: { id: true, numero: true },
       }),
       prisma.financeiro.aggregate({
         _sum: { valor: true },
-        where: { tipo: "RECEITA", status: "PAGO" },
+        where: { tipo: "RECEITA", status: "PAGO", escritorioId },
       }),
       prisma.financeiro.aggregate({
         _sum: { valor: true },
-        where: { tipo: "DESPESA", status: "PAGO" },
+        where: { tipo: "DESPESA", status: "PAGO", escritorioId },
       }),
     ]);
 

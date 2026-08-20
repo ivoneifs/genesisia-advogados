@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { createContato, deleteContato } from "@/lib/actions/contatos";
 import { Trash2, Plus } from "lucide-react";
+import { requireEscritorioId } from "@/lib/session";
 
 const TIPOS = [
   { value: "ADVOGADO", label: "Advogado(a) parceiro(a)" },
@@ -12,7 +13,11 @@ const TIPOS = [
 ];
 
 export default async function ContatosPage() {
-  const contatos = await prisma.contato.findMany({ orderBy: { nome: "asc" } });
+  const escritorioId = await requireEscritorioId();
+  const contatos = await prisma.contato.findMany({
+    where: { escritorioId },
+    orderBy: { nome: "asc" },
+  });
 
   return (
     <div className="space-y-6">

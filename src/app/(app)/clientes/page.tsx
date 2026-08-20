@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { deleteCliente } from "@/lib/actions/clientes";
+import { requireEscritorioId } from "@/lib/session";
 import { Plus, Trash2, Pencil } from "lucide-react";
 
 export default async function ClientesPage() {
+  const escritorioId = await requireEscritorioId();
   const clientes = await prisma.cliente.findMany({
+    where: { escritorioId },
     orderBy: { nome: "asc" },
     include: { _count: { select: { processos: true } } },
   });

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import ProcessoForm from "@/components/processo-form";
 import { updateProcesso } from "@/lib/actions/processos";
+import { requireEscritorioId } from "@/lib/session";
 
 export default async function EditarProcessoPage({
   params,
@@ -9,10 +10,11 @@ export default async function EditarProcessoPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const escritorioId = await requireEscritorioId();
 
   const [processo, clientes] = await Promise.all([
-    prisma.processo.findUnique({ where: { id } }),
-    prisma.cliente.findMany({ orderBy: { nome: "asc" } }),
+    prisma.processo.findFirst({ where: { id, escritorioId } }),
+    prisma.cliente.findMany({ where: { escritorioId }, orderBy: { nome: "asc" } }),
   ]);
 
   if (!processo) notFound();

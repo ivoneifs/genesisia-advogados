@@ -29,6 +29,7 @@ function addDays(base: Date, days: number) {
 }
 
 export async function runWorkflows(
+  escritorioId: string,
   gatilho: Gatilho,
   ctx: {
     processoId?: string | null;
@@ -38,7 +39,7 @@ export async function runWorkflows(
   }
 ) {
   const workflows = await prisma.workflow.findMany({
-    where: { gatilho, ativo: true },
+    where: { gatilho, ativo: true, escritorioId },
   });
 
   for (const wf of workflows) {
@@ -64,6 +65,7 @@ export async function runWorkflows(
         data,
         tipo: "TAREFA",
         processoId: ctx.processoId ?? null,
+        escritorioId,
       },
     });
 

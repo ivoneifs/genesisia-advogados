@@ -10,21 +10,49 @@ function daysFromNow(n) {
 }
 
 async function main() {
+  const superadmin = await prisma.user.findUnique({
+    where: { email: "admin@genesisia.com.br" },
+  });
+  if (!superadmin) {
+    await prisma.user.create({
+      data: {
+        name: "Administrador Genesis IA",
+        email: "admin@genesisia.com.br",
+        password: await bcrypt.hash("admin123", 10),
+        role: "SUPERADMIN",
+      },
+    });
+    console.log(
+      "Superadmin criado: admin@genesisia.com.br / admin123 — troque a senha depois do primeiro login."
+    );
+  }
+
   const existing = await prisma.user.findUnique({
     where: { email: "demo@genesisia.com.br" },
   });
 
-  const user =
-    existing ??
-    (await prisma.user.create({
+  let user = existing;
+  let escritorio = existing
+    ? await prisma.escritorio.findUnique({ where: { id: existing.escritorioId } })
+    : null;
+
+  if (!existing) {
+    escritorio = await prisma.escritorio.create({
+      data: { nome: "Escritório Demo" },
+    });
+    user = await prisma.user.create({
       data: {
         name: "Dra. Ana Beatriz",
         email: "demo@genesisia.com.br",
         password: await bcrypt.hash("demo123", 10),
+        escritorioId: escritorio.id,
       },
-    }));
+    });
+  }
 
-  const clientesCount = await prisma.cliente.count();
+  const escritorioId = escritorio.id;
+
+  const clientesCount = await prisma.cliente.count({ where: { escritorioId } });
   if (clientesCount > 0) {
     console.log("Dados de exemplo já existem, pulando seed.");
     return;
@@ -38,6 +66,7 @@ async function main() {
       email: "joao.almeida@email.com",
       telefone: "(11) 98888-1234",
       endereco: "Rua das Acácias, 120 - São Paulo/SP",
+      escritorioId,
     },
   });
 
@@ -49,6 +78,7 @@ async function main() {
       email: "financeiro@silvaefilhos.com.br",
       telefone: "(11) 3222-4455",
       endereco: "Av. Paulista, 900 - São Paulo/SP",
+      escritorioId,
     },
   });
 
@@ -64,6 +94,7 @@ async function main() {
       descricao: "Ação de indenização por danos materiais.",
       clienteId: clienteA.id,
       responsavelId: user.id,
+      escritorioId,
     },
   });
 
@@ -79,6 +110,7 @@ async function main() {
       descricao: "Reclamação trabalhista - horas extras.",
       clienteId: clienteB.id,
       responsavelId: user.id,
+      escritorioId,
     },
   });
 
@@ -91,6 +123,7 @@ async function main() {
         prioridade: "ALTA",
         processoId: processo1.id,
         responsavelId: user.id,
+        escritorioId,
       },
       {
         titulo: "Protocolar réplica",
@@ -98,6 +131,7 @@ async function main() {
         prioridade: "NORMAL",
         processoId: processo1.id,
         responsavelId: user.id,
+        escritorioId,
       },
       {
         titulo: "Audiência de instrução",
@@ -106,6 +140,7 @@ async function main() {
         status: "PENDENTE",
         processoId: processo2.id,
         responsavelId: user.id,
+        escritorioId,
       },
     ],
   });
@@ -118,6 +153,7 @@ async function main() {
         tipo: "TAREFA",
         processoId: processo1.id,
         responsavelId: user.id,
+        escritorioId,
       },
       {
         titulo: "Audiência de instrução - TRT-2",
@@ -125,6 +161,7 @@ async function main() {
         tipo: "AUDIENCIA",
         processoId: processo2.id,
         responsavelId: user.id,
+        escritorioId,
       },
       {
         titulo: "Reunião com Comércio Silva & Filhos",
@@ -132,6 +169,7 @@ async function main() {
         tipo: "REUNIAO",
         processoId: processo2.id,
         responsavelId: user.id,
+        escritorioId,
       },
     ],
   });
@@ -146,6 +184,7 @@ async function main() {
         status: "PAGO",
         clienteId: clienteA.id,
         processoId: processo1.id,
+        escritorioId,
       },
       {
         tipo: "RECEITA",
@@ -155,6 +194,7 @@ async function main() {
         status: "PENDENTE",
         clienteId: clienteB.id,
         processoId: processo2.id,
+        escritorioId,
       },
       {
         tipo: "DESPESA",
@@ -163,6 +203,7 @@ async function main() {
         vencimento: daysFromNow(-5),
         status: "PAGO",
         processoId: processo1.id,
+        escritorioId,
       },
     ],
   });

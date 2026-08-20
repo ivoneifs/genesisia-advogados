@@ -2,9 +2,12 @@ import { prisma } from "@/lib/db";
 import { GATILHOS } from "@/lib/workflows";
 import { createWorkflow, deleteWorkflow, toggleWorkflow } from "@/lib/actions/workflows";
 import { Workflow, Plus, Trash2, Zap, ToggleLeft, ToggleRight } from "lucide-react";
+import { requireEscritorioId } from "@/lib/session";
 
 export default async function WorkflowsPage() {
+  const escritorioId = await requireEscritorioId();
   const workflows = await prisma.workflow.findMany({
+    where: { escritorioId },
     orderBy: { createdAt: "desc" },
   });
 

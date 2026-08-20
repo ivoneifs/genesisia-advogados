@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { Plus, RefreshCw, Search, ChevronDown } from "lucide-react";
 import ProcessosToolbar from "@/components/processos-toolbar";
+import { requireEscritorioId } from "@/lib/session";
 
 export default async function ProcessosPage({
   searchParams,
@@ -11,9 +12,11 @@ export default async function ProcessosPage({
 }) {
   const { status, q } = await searchParams;
   const currentStatus = status ?? "ATIVO";
+  const escritorioId = await requireEscritorioId();
 
   const processos = await prisma.processo.findMany({
     where: {
+      escritorioId,
       ...(currentStatus !== "TODOS" ? { status: currentStatus } : {}),
       ...(q
         ? {

@@ -81,18 +81,32 @@ export default function LoginPage() {
 
           <form action={action} className="space-y-4">
             {mode === "register" && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nome completo
-                </label>
-                <input
-                  name="name"
-                  type="text"
-                  required
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent"
-                  placeholder="Dra. Maria Silva"
-                />
-              </div>
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nome do escritório
+                  </label>
+                  <input
+                    name="escritorioNome"
+                    type="text"
+                    required
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent"
+                    placeholder="Silva Advogados Associados"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nome completo
+                  </label>
+                  <input
+                    name="name"
+                    type="text"
+                    required
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent"
+                    placeholder="Dra. Maria Silva"
+                  />
+                </div>
+              </>
             )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

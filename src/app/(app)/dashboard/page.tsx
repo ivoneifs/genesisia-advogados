@@ -9,8 +9,10 @@ import {
   ListChecks,
   AlertTriangle,
 } from "lucide-react";
+import { requireEscritorioId } from "@/lib/session";
 
 export default async function DashboardPage() {
+  const escritorioId = await requireEscritorioId();
   const now = new Date();
   const in7 = new Date();
   in7.setDate(in7.getDate() + 7);
@@ -24,11 +26,12 @@ export default async function DashboardPage() {
     proximasTarefas,
     processosRecentes,
   ] = await Promise.all([
-    prisma.processo.count({ where: { status: "ATIVO" } }),
-    prisma.prazo.count({ where: { status: "PENDENTE" } }),
+    prisma.processo.count({ where: { status: "ATIVO", escritorioId } }),
+    prisma.prazo.count({ where: { status: "PENDENTE", escritorioId } }),
     prisma.tarefa.count({
       where: {
         concluida: false,
+        escritorioId,
         data: {
           gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
           lt: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1),
@@ -37,21 +40,22 @@ export default async function DashboardPage() {
     }),
     prisma.financeiro.aggregate({
       _sum: { valor: true },
-      where: { tipo: "RECEITA", status: { not: "PAGO" } },
+      where: { tipo: "RECEITA", status: { not: "PAGO" }, escritorioId },
     }),
     prisma.prazo.findMany({
-      where: { status: "PENDENTE" },
+      where: { status: "PENDENTE", escritorioId },
       orderBy: { dataVencimento: "asc" },
       take: 6,
       include: { processo: { include: { cliente: true } } },
     }),
     prisma.tarefa.findMany({
-      where: { concluida: false, data: { gte: now } },
+      where: { concluida: false, data: { gte: now }, escritorioId },
       orderBy: { data: "asc" },
       take: 6,
       include: { processo: true },
     }),
     prisma.processo.findMany({
+      where: { escritorioId },
       orderBy: { createdAt: "desc" },
       take: 5,
       include: { cliente: true },

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { getSession } from "@/lib/session";
+import { getSession, requireEscritorioId } from "@/lib/session";
 import { runWorkflows } from "@/lib/workflows";
 
 function parseValor(v: FormDataEntryValue | null) {
@@ -18,11 +18,13 @@ export async function createProcesso(formData: FormData) {
   if (!numero || !clienteId) return;
 
   const session = await getSession();
+  const escritorioId = await requireEscritorioId();
 
   const processo = await prisma.processo.create({
     data: {
       numero,
       clienteId,
+      escritorioId,
       area: String(formData.get("area") ?? "") || null,
       status: String(formData.get("status") ?? "ATIVO"),
       tribunal: String(formData.get("tribunal") ?? "") || null,
@@ -43,8 +45,10 @@ export async function updateProcesso(id: string, formData: FormData) {
   const clienteId = String(formData.get("clienteId") ?? "");
   if (!numero || !clienteId) return;
 
-  await prisma.processo.update({
-    where: { id },
+  const escritorioId = await requireEscritorioId();
+
+  await prisma.processo.updateMany({
+    where: { id, escritorioId },
     data: {
       numero,
       clienteId,
@@ -68,16 +72,21 @@ export async function moveProcessoStatus(formData: FormData) {
   const status = String(formData.get("status") ?? "");
   if (!id || !status) return;
 
-  const processo = await prisma.processo.update({
-    where: { id },
+  const escritorioId = await requireEscritorioId();
+
+  const result = await prisma.processo.updateMany({
+    where: { id, escritorioId },
     data: { status },
   });
 
-  if (status === "ARQUIVADO" || status === "ENCERRADO") {
-    await runWorkflows("PROCESSO_ENCERRADO", {
-      processoId: id,
-      processoNumero: processo.numero,
-    });
+  if (result.count > 0 && (status === "ARQUIVADO" || status === "ENCERRADO")) {
+    const processo = await prisma.processo.findUnique({ where: { id } });
+    if (processo) {
+      await runWorkflows(escritorioId, "PROCESSO_ENCERRADO", {
+        processoId: id,
+        processoNumero: processo.numero,
+      });
+    }
   }
 
   revalidatePath("/kanban");
@@ -90,7 +99,8 @@ export async function moveProcessoStatus(formData: FormData) {
 export async function deleteProcesso(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
-  await prisma.processo.delete({ where: { id } });
+  const escritorioId = await requireEscritorioId();
+  await prisma.processo.deleteMany({ where: { id, escritorioId } });
   revalidatePath("/processos");
   redirect("/processos");
 }

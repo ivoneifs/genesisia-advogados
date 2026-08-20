@@ -5,6 +5,7 @@ import Badge from "@/components/badge";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { createPrazo, deletePrazo, togglePrazoStatus } from "@/lib/actions/prazos";
 import { deleteProcesso } from "@/lib/actions/processos";
+import { requireEscritorioId } from "@/lib/session";
 import { Pencil, Trash2, Plus, CheckCircle2, Circle } from "lucide-react";
 
 export default async function ProcessoDetalhePage({
@@ -13,9 +14,10 @@ export default async function ProcessoDetalhePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const escritorioId = await requireEscritorioId();
 
-  const processo = await prisma.processo.findUnique({
-    where: { id },
+  const processo = await prisma.processo.findFirst({
+    where: { id, escritorioId },
     include: {
       cliente: true,
       responsavel: true,

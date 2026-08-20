@@ -2,9 +2,14 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import ProcessoForm from "@/components/processo-form";
 import { createProcesso } from "@/lib/actions/processos";
+import { requireEscritorioId } from "@/lib/session";
 
 export default async function NovoProcessoPage() {
-  const clientes = await prisma.cliente.findMany({ orderBy: { nome: "asc" } });
+  const escritorioId = await requireEscritorioId();
+  const clientes = await prisma.cliente.findMany({
+    where: { escritorioId },
+    orderBy: { nome: "asc" },
+  });
 
   if (clientes.length === 0) {
     return (

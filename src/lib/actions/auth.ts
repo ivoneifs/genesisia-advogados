@@ -18,7 +18,10 @@ export async function loginAction(
     return { error: "Informe e-mail e senha." };
   }
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findUnique({
+    where: { email },
+    include: { escritorio: true },
+  });
   if (!user) {
     return { error: "E-mail ou senha inválidos." };
   }
@@ -28,8 +31,21 @@ export async function loginAction(
     return { error: "E-mail ou senha inválidos." };
   }
 
-  await createSession({ userId: user.id, name: user.name, email: user.email });
-  redirect("/dashboard");
+  if (!user.ativo) {
+    return { error: "Seu acesso está desativado. Fale com o administrador." };
+  }
+  if (user.escritorio && !user.escritorio.ativo) {
+    return { error: "O acesso do seu escritório está desativado." };
+  }
+
+  await createSession({
+    userId: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    escritorioId: user.escritorioId,
+  });
+  redirect(user.role === "SUPERADMIN" ? "/admin/usuarios" : "/dashboard");
 }
 
 export async function registerAction(
@@ -39,8 +55,9 @@ export async function registerAction(
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
+  const escritorioNome = String(formData.get("escritorioNome") ?? "").trim();
 
-  if (!name || !email || !password) {
+  if (!name || !email || !password || !escritorioNome) {
     return { error: "Preencha todos os campos." };
   }
   if (password.length < 6) {
@@ -53,11 +70,27 @@ export async function registerAction(
   }
 
   const hashed = await bcrypt.hash(password, 10);
-  const user = await prisma.user.create({
-    data: { name, email, password: hashed },
+
+  const escritorio = await prisma.escritorio.create({
+    data: { nome: escritorioNome },
   });
 
-  await createSession({ userId: user.id, name: user.name, email: user.email });
+  const user = await prisma.user.create({
+    data: {
+      name,
+      email,
+      password: hashed,
+      escritorioId: escritorio.id,
+    },
+  });
+
+  await createSession({
+    userId: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    escritorioId: user.escritorioId,
+  });
   redirect("/dashboard");
 }
 

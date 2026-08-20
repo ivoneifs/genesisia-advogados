@@ -2,15 +2,19 @@ import { prisma } from "@/lib/db";
 import { formatDateTime } from "@/lib/format";
 import { createAtendimento, deleteAtendimento } from "@/lib/actions/atendimentos";
 import { Trash2, Plus, MessageCircle } from "lucide-react";
+import { requireEscritorioId } from "@/lib/session";
 
 export default async function AtendimentosPage() {
+  const escritorioId = await requireEscritorioId();
   const [atendimentos, clientes, processos] = await Promise.all([
     prisma.atendimento.findMany({
+      where: { escritorioId },
       orderBy: { data: "desc" },
       include: { cliente: true, processo: true },
     }),
-    prisma.cliente.findMany({ orderBy: { nome: "asc" } }),
+    prisma.cliente.findMany({ where: { escritorioId }, orderBy: { nome: "asc" } }),
     prisma.processo.findMany({
+      where: { escritorioId },
       orderBy: { numero: "asc" },
       select: { id: true, numero: true },
     }),

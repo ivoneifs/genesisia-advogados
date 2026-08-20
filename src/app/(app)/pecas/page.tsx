@@ -1,10 +1,13 @@
 import { prisma } from "@/lib/db";
 import PecaGenerator from "@/components/peca-generator";
+import { requireEscritorioId } from "@/lib/session";
 
 export default async function PecasPage() {
+  const escritorioId = await requireEscritorioId();
   const [clientes, processos] = await Promise.all([
-    prisma.cliente.findMany({ orderBy: { nome: "asc" } }),
+    prisma.cliente.findMany({ where: { escritorioId }, orderBy: { nome: "asc" } }),
     prisma.processo.findMany({
+      where: { escritorioId },
       orderBy: { numero: "asc" },
       include: { cliente: true },
     }),

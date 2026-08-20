@@ -3,16 +3,19 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { runWorkflows } from "@/lib/workflows";
+import { requireEscritorioId } from "@/lib/session";
 
 export async function createPublicacao(formData: FormData) {
   const conteudo = String(formData.get("conteudo") ?? "").trim();
   if (!conteudo) return;
 
+  const escritorioId = await requireEscritorioId();
   const processoId = String(formData.get("processoId") ?? "") || null;
 
   await prisma.publicacao.create({
     data: {
       conteudo,
+      escritorioId,
       diario: String(formData.get("diario") ?? "") || null,
       dataPublicacao: formData.get("dataPublicacao")
         ? new Date(String(formData.get("dataPublicacao")))
@@ -21,7 +24,7 @@ export async function createPublicacao(formData: FormData) {
     },
   });
 
-  await runWorkflows("PUBLICACAO_NOVA", { processoId });
+  await runWorkflows(escritorioId, "PUBLICACAO_NOVA", { processoId });
 
   revalidatePath("/publicacoes");
   revalidatePath("/agenda");
@@ -33,8 +36,10 @@ export async function vincularPublicacao(formData: FormData) {
   const processoId = String(formData.get("processoId") ?? "");
   if (!id || !processoId) return;
 
-  await prisma.publicacao.update({
-    where: { id },
+  const escritorioId = await requireEscritorioId();
+
+  await prisma.publicacao.updateMany({
+    where: { id, escritorioId },
     data: { processoId, status: "TRATADA" },
   });
 
@@ -47,8 +52,10 @@ export async function toggleTratada(formData: FormData) {
   const status = String(formData.get("status") ?? "NAO_TRATADA");
   if (!id) return;
 
-  await prisma.publicacao.update({
-    where: { id },
+  const escritorioId = await requireEscritorioId();
+
+  await prisma.publicacao.updateMany({
+    where: { id, escritorioId },
     data: { status: status === "TRATADA" ? "NAO_TRATADA" : "TRATADA" },
   });
 
@@ -58,6 +65,7 @@ export async function toggleTratada(formData: FormData) {
 export async function deletePublicacao(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
-  await prisma.publicacao.delete({ where: { id } });
+  const escritorioId = await requireEscritorioId();
+  await prisma.publicacao.deleteMany({ where: { id, escritorioId } });
   revalidatePath("/publicacoes");
 }

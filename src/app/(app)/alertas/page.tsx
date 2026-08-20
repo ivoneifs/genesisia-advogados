@@ -8,8 +8,10 @@ import {
   Wallet,
   CheckCircle2,
 } from "lucide-react";
+import { requireEscritorioId } from "@/lib/session";
 
 export default async function AlertasPage() {
+  const escritorioId = await requireEscritorioId();
   const now = new Date();
   const in3 = new Date();
   in3.setDate(in3.getDate() + 3);
@@ -17,16 +19,16 @@ export default async function AlertasPage() {
   const [prazosUrgentes, financeiroAtrasado, publicacoesPendentes] =
     await Promise.all([
       prisma.prazo.findMany({
-        where: { status: "PENDENTE", dataVencimento: { lt: in3 } },
+        where: { status: "PENDENTE", dataVencimento: { lt: in3 }, escritorioId },
         orderBy: { dataVencimento: "asc" },
         include: { processo: { include: { cliente: true } } },
       }),
       prisma.financeiro.findMany({
-        where: { status: { not: "PAGO" }, vencimento: { lt: now } },
+        where: { status: { not: "PAGO" }, vencimento: { lt: now }, escritorioId },
         orderBy: { vencimento: "asc" },
       }),
       prisma.publicacao.findMany({
-        where: { status: "NAO_TRATADA" },
+        where: { status: "NAO_TRATADA", escritorioId },
         orderBy: { createdAt: "desc" },
       }),
     ]);

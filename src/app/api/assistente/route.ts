@@ -18,6 +18,13 @@ export async function POST(req: NextRequest) {
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  if (!session.escritorioId) {
+    return NextResponse.json(
+      { error: "Assistente disponível apenas para usuários de um escritório." },
+      { status: 403 }
+    );
+  }
+  const escritorioId = session.escritorioId;
 
   const client = getClient();
   if (!client) {
@@ -87,7 +94,7 @@ Se a pergunta não tiver relação com o escritório (processos, clientes, prazo
         } catch {
           args = {};
         }
-        const result = await executeTool(call.function.name, args);
+        const result = await executeTool(escritorioId, call.function.name, args);
         messages.push({
           role: "tool",
           tool_call_id: call.id,

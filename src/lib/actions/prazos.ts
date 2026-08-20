@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { getSession } from "@/lib/session";
+import { getSession, requireEscritorioId } from "@/lib/session";
 import { runWorkflows } from "@/lib/workflows";
 
 export async function createPrazo(formData: FormData) {
@@ -12,6 +12,7 @@ export async function createPrazo(formData: FormData) {
   if (!titulo || !processoId || !dataVencimento) return;
 
   const session = await getSession();
+  const escritorioId = await requireEscritorioId();
   const prioridade = String(formData.get("prioridade") ?? "NORMAL");
   const vencimento = new Date(dataVencimento);
 
@@ -19,6 +20,7 @@ export async function createPrazo(formData: FormData) {
     data: {
       titulo,
       processoId,
+      escritorioId,
       dataVencimento: vencimento,
       descricao: String(formData.get("descricao") ?? "") || null,
       prioridade,
@@ -27,7 +29,7 @@ export async function createPrazo(formData: FormData) {
   });
 
   if (prioridade === "ALTA") {
-    await runWorkflows("PRAZO_ALTA", {
+    await runWorkflows(escritorioId, "PRAZO_ALTA", {
       processoId,
       prazoTitulo: titulo,
       prazoVencimento: vencimento,
@@ -45,8 +47,10 @@ export async function togglePrazoStatus(formData: FormData) {
   const status = String(formData.get("status") ?? "PENDENTE");
   if (!id) return;
 
-  await prisma.prazo.update({
-    where: { id },
+  const escritorioId = await requireEscritorioId();
+
+  await prisma.prazo.updateMany({
+    where: { id, escritorioId },
     data: { status: status === "CUMPRIDO" ? "PENDENTE" : "CUMPRIDO" },
   });
 
@@ -60,7 +64,8 @@ export async function deletePrazo(formData: FormData) {
   const processoId = String(formData.get("processoId") ?? "");
   if (!id) return;
 
-  await prisma.prazo.delete({ where: { id } });
+  const escritorioId = await requireEscritorioId();
+  await prisma.prazo.deleteMany({ where: { id, escritorioId } });
 
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/dashboard");

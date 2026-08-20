@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { moveProcessoStatus } from "@/lib/actions/processos";
 import { formatCurrency } from "@/lib/format";
 import { ArrowRight } from "lucide-react";
+import { requireEscritorioId } from "@/lib/session";
 
 const COLUNAS = [
   { status: "ATIVO", label: "Ativos", next: "ARQUIVADO", nextLabel: "Arquivar" },
@@ -16,7 +17,9 @@ const COLUNAS = [
 ];
 
 export default async function KanbanPage() {
+  const escritorioId = await requireEscritorioId();
   const processos = await prisma.processo.findMany({
+    where: { escritorioId },
     orderBy: { createdAt: "desc" },
     include: { cliente: true, _count: { select: { prazos: true } } },
   });

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import ContatoForm from "@/components/contato-form";
 import { updateContato } from "@/lib/actions/contatos";
+import { requireEscritorioId } from "@/lib/session";
 
 export default async function EditarContatoPage({
   params,
@@ -9,7 +10,8 @@ export default async function EditarContatoPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const contato = await prisma.contato.findUnique({ where: { id } });
+  const escritorioId = await requireEscritorioId();
+  const contato = await prisma.contato.findFirst({ where: { id, escritorioId } });
   if (!contato) notFound();
 
   const action = updateContato.bind(null, id);

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
+import { requireEscritorioId } from "@/lib/session";
 
 export async function createFinanceiro(formData: FormData) {
   const descricao = String(formData.get("descricao") ?? "").trim();
@@ -10,10 +11,13 @@ export async function createFinanceiro(formData: FormData) {
   const valor = parseFloat(valorStr);
   if (!descricao || !vencimento || !Number.isFinite(valor)) return;
 
+  const escritorioId = await requireEscritorioId();
+
   await prisma.financeiro.create({
     data: {
       descricao,
       valor,
+      escritorioId,
       vencimento: new Date(vencimento),
       tipo: String(formData.get("tipo") ?? "RECEITA"),
       status: String(formData.get("status") ?? "PENDENTE"),
@@ -31,8 +35,10 @@ export async function toggleFinanceiroStatus(formData: FormData) {
   const status = String(formData.get("status") ?? "PENDENTE");
   if (!id) return;
 
-  await prisma.financeiro.update({
-    where: { id },
+  const escritorioId = await requireEscritorioId();
+
+  await prisma.financeiro.updateMany({
+    where: { id, escritorioId },
     data: { status: status === "PAGO" ? "PENDENTE" : "PAGO" },
   });
 
@@ -43,7 +49,8 @@ export async function toggleFinanceiroStatus(formData: FormData) {
 export async function deleteFinanceiro(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
-  await prisma.financeiro.delete({ where: { id } });
+  const escritorioId = await requireEscritorioId();
+  await prisma.financeiro.deleteMany({ where: { id, escritorioId } });
   revalidatePath("/financeiro");
   revalidatePath("/dashboard");
 }

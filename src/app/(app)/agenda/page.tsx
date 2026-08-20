@@ -3,19 +3,23 @@ import { formatDate } from "@/lib/format";
 import { createTarefa, deleteTarefa, toggleTarefa } from "@/lib/actions/tarefas";
 import Badge from "@/components/badge";
 import { CheckCircle2, Circle, Trash2, Plus, CalendarClock } from "lucide-react";
+import { requireEscritorioId } from "@/lib/session";
 
 export default async function AgendaPage() {
+  const escritorioId = await requireEscritorioId();
   const [tarefas, prazos, processos] = await Promise.all([
     prisma.tarefa.findMany({
+      where: { escritorioId },
       orderBy: [{ concluida: "asc" }, { data: "asc" }],
       include: { processo: true },
     }),
     prisma.prazo.findMany({
-      where: { status: "PENDENTE" },
+      where: { status: "PENDENTE", escritorioId },
       orderBy: { dataVencimento: "asc" },
       include: { processo: { include: { cliente: true } } },
     }),
     prisma.processo.findMany({
+      where: { escritorioId },
       orderBy: { numero: "asc" },
       select: { id: true, numero: true },
     }),

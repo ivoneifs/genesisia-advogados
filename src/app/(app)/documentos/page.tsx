@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { createDocumento, deleteDocumento } from "@/lib/actions/documentos";
 import { Trash2, Plus, FileText, Download, Paperclip } from "lucide-react";
+import { requireEscritorioId } from "@/lib/session";
 
 const TIPOS = [
   { value: "PETICAO", label: "Petição" },
@@ -12,16 +13,19 @@ const TIPOS = [
 ];
 
 export default async function DocumentosPage() {
+  const escritorioId = await requireEscritorioId();
   const [documentos, processos, clientes] = await Promise.all([
     prisma.documento.findMany({
+      where: { escritorioId },
       orderBy: { createdAt: "desc" },
       include: { processo: true, cliente: true },
     }),
     prisma.processo.findMany({
+      where: { escritorioId },
       orderBy: { numero: "asc" },
       select: { id: true, numero: true },
     }),
-    prisma.cliente.findMany({ orderBy: { nome: "asc" } }),
+    prisma.cliente.findMany({ where: { escritorioId }, orderBy: { nome: "asc" } }),
   ]);
 
   return (

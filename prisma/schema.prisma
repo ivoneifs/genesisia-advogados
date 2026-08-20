@@ -7,13 +7,36 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Escritorio {
+  id        String   @id @default(cuid())
+  nome      String
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  users        User[]
+  clientes     Cliente[]
+  processos    Processo[]
+  prazos       Prazo[]
+  tarefas      Tarefa[]
+  financeiros  Financeiro[]
+  contatos     Contato[]
+  publicacoes  Publicacao[]
+  documentos   Documento[]
+  workflows    Workflow[]
+  atendimentos Atendimento[]
+}
+
 model User {
   id        String   @id @default(cuid())
   name      String
   email     String   @unique
   password  String
   role      String   @default("ADVOGADO")
+  ativo     Boolean  @default(true)
   createdAt DateTime @default(now())
+
+  escritorioId String?
+  escritorio   Escritorio? @relation(fields: [escritorioId], references: [id])
 
   processos Processo[]
   prazos    Prazo[]
@@ -30,6 +53,9 @@ model Cliente {
   endereco    String?
   observacoes String?
   createdAt   DateTime @default(now())
+
+  escritorioId String
+  escritorio   Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
 
   processos    Processo[]
   financeiros  Financeiro[]
@@ -48,6 +74,9 @@ model Processo {
   valorCausa     Float?
   descricao      String?
   createdAt      DateTime @default(now())
+
+  escritorioId   String
+  escritorio     Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
 
   clienteId      String
   cliente        Cliente  @relation(fields: [clienteId], references: [id])
@@ -72,6 +101,9 @@ model Prazo {
   prioridade     String   @default("NORMAL")
   createdAt      DateTime @default(now())
 
+  escritorioId   String
+  escritorio     Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
+
   processoId     String
   processo       Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
 
@@ -87,6 +119,9 @@ model Tarefa {
   tipo          String   @default("TAREFA")
   concluida     Boolean  @default(false)
   createdAt     DateTime @default(now())
+
+  escritorioId  String
+  escritorio    Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
 
   processoId    String?
   processo      Processo? @relation(fields: [processoId], references: [id], onDelete: SetNull)
@@ -104,6 +139,9 @@ model Financeiro {
   status      String   @default("PENDENTE")
   createdAt   DateTime @default(now())
 
+  escritorioId String
+  escritorio   Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
+
   clienteId   String?
   cliente     Cliente? @relation(fields: [clienteId], references: [id], onDelete: SetNull)
 
@@ -120,6 +158,9 @@ model Contato {
   empresa     String?
   observacoes String?
   createdAt   DateTime @default(now())
+
+  escritorioId String
+  escritorio   Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
 }
 
 model Publicacao {
@@ -129,6 +170,9 @@ model Publicacao {
   dataPublicacao DateTime?
   status         String    @default("NAO_TRATADA")
   createdAt      DateTime  @default(now())
+
+  escritorioId   String
+  escritorio     Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
 
   processoId     String?
   processo       Processo? @relation(fields: [processoId], references: [id], onDelete: SetNull)
@@ -143,6 +187,9 @@ model Documento {
   arquivoTipo String?
   arquivoTam  Int?
   createdAt   DateTime @default(now())
+
+  escritorioId String
+  escritorio   Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
 
   processoId  String?
   processo    Processo? @relation(fields: [processoId], references: [id], onDelete: SetNull)
@@ -159,6 +206,9 @@ model Workflow {
   ativo      Boolean  @default(true)
   execucoes  Int      @default(0)
   createdAt  DateTime @default(now())
+
+  escritorioId String
+  escritorio   Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
 }
 
 model Atendimento {
@@ -167,6 +217,9 @@ model Atendimento {
   descricao  String?
   data       DateTime @default(now())
   createdAt  DateTime @default(now())
+
+  escritorioId String
+  escritorio   Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
 
   clienteId  String
   cliente    Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)

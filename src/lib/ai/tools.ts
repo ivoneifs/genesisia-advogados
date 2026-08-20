@@ -76,22 +76,29 @@ export const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   },
 ];
 
-export async function executeTool(name: string, input: unknown): Promise<string> {
+export async function executeTool(
+  escritorioId: string,
+  name: string,
+  input: unknown
+): Promise<string> {
   const args = (input ?? {}) as Record<string, unknown>;
 
   switch (name) {
     case "buscar_processos": {
       const query = String(args.query ?? "").trim();
       const processos = await prisma.processo.findMany({
-        where: query
-          ? {
-              OR: [
-                { numero: { contains: query } },
-                { parteContraria: { contains: query } },
-                { cliente: { nome: { contains: query } } },
-              ],
-            }
-          : undefined,
+        where: {
+          escritorioId,
+          ...(query
+            ? {
+                OR: [
+                  { numero: { contains: query } },
+                  { parteContraria: { contains: query } },
+                  { cliente: { nome: { contains: query } } },
+                ],
+              }
+            : {}),
+        },
         orderBy: { createdAt: "desc" },
         take: 10,
         include: {
@@ -118,7 +125,7 @@ export async function executeTool(name: string, input: unknown): Promise<string>
     case "detalhe_processo": {
       const numero = String(args.numero ?? "").trim();
       const processo = await prisma.processo.findFirst({
-        where: { numero: { contains: numero } },
+        where: { numero: { contains: numero }, escritorioId },
         include: {
           cliente: true,
           prazos: { orderBy: { dataVencimento: "asc" } },
@@ -165,6 +172,7 @@ export async function executeTool(name: string, input: unknown): Promise<string>
       const prazos = await prisma.prazo.findMany({
         where: {
           status: "PENDENTE",
+          escritorioId,
           ...(apenasAtrasados ? { dataVencimento: { lt: new Date() } } : {}),
         },
         orderBy: { dataVencimento: "asc" },
@@ -185,7 +193,7 @@ export async function executeTool(name: string, input: unknown): Promise<string>
     case "buscar_clientes": {
       const query = String(args.query ?? "").trim();
       const clientes = await prisma.cliente.findMany({
-        where: query ? { nome: { contains: query } } : undefined,
+        where: { escritorioId, ...(query ? { nome: { contains: query } } : {}) },
         take: 10,
         orderBy: { nome: "asc" },
         include: { _count: { select: { processos: true } } },
@@ -203,9 +211,9 @@ export async function executeTool(name: string, input: unknown): Promise<string>
 
     case "resumo_financeiro": {
       const [receitasPagas, receitasPendentes, despesasPagas] = await Promise.all([
-        prisma.financeiro.aggregate({ _sum: { valor: true }, where: { tipo: "RECEITA", status: "PAGO" } }),
-        prisma.financeiro.aggregate({ _sum: { valor: true }, where: { tipo: "RECEITA", status: { not: "PAGO" } } }),
-        prisma.financeiro.aggregate({ _sum: { valor: true }, where: { tipo: "DESPESA", status: "PAGO" } }),
+        prisma.financeiro.aggregate({ _sum: { valor: true }, where: { tipo: "RECEITA", status: "PAGO", escritorioId } }),
+        prisma.financeiro.aggregate({ _sum: { valor: true }, where: { tipo: "RECEITA", status: { not: "PAGO" }, escritorioId } }),
+        prisma.financeiro.aggregate({ _sum: { valor: true }, where: { tipo: "DESPESA", status: "PAGO", escritorioId } }),
       ]);
 
       return [

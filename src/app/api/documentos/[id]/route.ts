@@ -16,7 +16,9 @@ export async function GET(
   }
 
   const { id } = await params;
-  const documento = await prisma.documento.findUnique({ where: { id } });
+  const documento = await prisma.documento.findFirst({
+    where: { id, escritorioId: session.escritorioId ?? undefined },
+  });
   if (!documento || !documento.arquivoNome) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }

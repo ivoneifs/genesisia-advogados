@@ -8,14 +8,18 @@ import {
 } from "@/lib/actions/publicacoes";
 import Badge from "@/components/badge";
 import { Trash2, Plus, Sparkles, Link2 } from "lucide-react";
+import { requireEscritorioId } from "@/lib/session";
 
 export default async function PublicacoesPage() {
+  const escritorioId = await requireEscritorioId();
   const [publicacoes, processos] = await Promise.all([
     prisma.publicacao.findMany({
+      where: { escritorioId },
       orderBy: [{ status: "asc" }, { createdAt: "desc" }],
       include: { processo: { include: { cliente: true } } },
     }),
     prisma.processo.findMany({
+      where: { escritorioId },
       orderBy: { numero: "asc" },
       select: { id: true, numero: true },
     }),

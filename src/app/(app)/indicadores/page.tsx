@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { formatCurrency } from "@/lib/format";
+import { requireEscritorioId } from "@/lib/session";
 
 function Bar({
   label,
@@ -32,6 +33,7 @@ function Bar({
 }
 
 export default async function IndicadoresPage() {
+  const escritorioId = await requireEscritorioId();
   const [
     porArea,
     porStatus,
@@ -40,15 +42,16 @@ export default async function IndicadoresPage() {
     totalProcessos,
     totalPrazos,
   ] = await Promise.all([
-    prisma.processo.groupBy({ by: ["area"], _count: { _all: true } }),
-    prisma.processo.groupBy({ by: ["status"], _count: { _all: true } }),
-    prisma.prazo.groupBy({ by: ["status"], _count: { _all: true } }),
+    prisma.processo.groupBy({ by: ["area"], where: { escritorioId }, _count: { _all: true } }),
+    prisma.processo.groupBy({ by: ["status"], where: { escritorioId }, _count: { _all: true } }),
+    prisma.prazo.groupBy({ by: ["status"], where: { escritorioId }, _count: { _all: true } }),
     prisma.financeiro.groupBy({
       by: ["tipo", "status"],
+      where: { escritorioId },
       _sum: { valor: true },
     }),
-    prisma.processo.count(),
-    prisma.prazo.count(),
+    prisma.processo.count({ where: { escritorioId } }),
+    prisma.prazo.count({ where: { escritorioId } }),
   ]);
 
   const maxArea = Math.max(...porArea.map((a) => a._count._all), 1);
