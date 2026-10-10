@@ -146,3 +146,61 @@ export async function buscarProcessosPorOab(
 
   return { processos, totalComunicacoes: itens.length, incompleto };
 }
+
+export type AdvogadoDjen = {
+  nome: string | null; // null se a OAB não aparece em nenhuma publicação
+  oab: string;
+  uf: string;
+  totalPublicacoes: number;
+  tribunais: string[];
+  ultimaPublicacao: Date | null;
+};
+
+const semZerosEsquerda = (s: string) => s.replace(/\D/g, "").replace(/^0+/, "");
+
+/** Dados do advogado a partir das publicações do DJEN (1 requisição). */
+export async function consultarAdvogado(numeroOab: string, uf: string): Promise<AdvogadoDjen> {
+  const url = `${API}?numeroOab=${encodeURIComponent(numeroOab)}&ufOab=${uf}&itensPorPagina=${POR_PAGINA}&pagina=1`;
+  const res = await fetch(url, {
+    headers: { Accept: "application/json" },
+    cache: "no-store",
+    signal: AbortSignal.timeout(20_000),
+  });
+  if (res.status === 429) {
+    throw new Error("O DJEN limitou as consultas. Aguarde 1 minuto.");
+  }
+  if (!res.ok) throw new Error(`O DJEN respondeu com erro (HTTP ${res.status}).`);
+
+  const json = (await res.json()) as { count?: number; items?: ComunicacaoApi[] };
+  const itens = json.items ?? [];
+  const alvo = semZerosEsquerda(numeroOab);
+
+  let nome: string | null = null;
+  const tribunais = new Set<string>();
+  let ultima: string | null = null;
+  for (const it of itens) {
+    if (it.siglaTribunal) tribunais.add(it.siglaTribunal);
+    if (!ultima || it.data_disponibilizacao > ultima) ultima = it.data_disponibilizacao;
+    if (nome) continue;
+    for (const da of it.destinatarioadvogados ?? []) {
+      const a = da.advogado;
+      if (
+        a?.nome &&
+        semZerosEsquerda(a.numero_oab ?? "") === alvo &&
+        (a.uf_oab ?? "").toUpperCase() === uf
+      ) {
+        nome = a.nome.trim();
+        break;
+      }
+    }
+  }
+
+  return {
+    nome,
+    oab: numeroOab,
+    uf,
+    totalPublicacoes: json.count ?? itens.length,
+    tribunais: [...tribunais].sort(),
+    ultimaPublicacao: ultima ? new Date(`${ultima}T12:00:00Z`) : null,
+  };
+}
