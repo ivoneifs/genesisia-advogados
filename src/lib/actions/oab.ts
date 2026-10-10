@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getSession, requireEscritorioId } from "@/lib/session";
 import { rateLimit } from "@/lib/rate-limit";
-import { buscarProcessosPorOab, UFS } from "@/lib/djen";
+import { buscarProcessosPorOab, consultarAdvogado, UFS } from "@/lib/djen";
 import { processosEncerrados } from "@/lib/datajud";
 
 export type ImportOabState =
@@ -27,6 +27,42 @@ const CLIENTE_IMPORTADOS = "Importados via OAB (a classificar)";
 const PREFIXO_IMPORTADO = "Importado do DJEN";
 
 const soDigitos = (s: string) => s.replace(/\D/g, "");
+
+export type AdvogadoOabResult =
+  | { error: string }
+  | {
+      nome: string | null;
+      oab: string;
+      uf: string;
+      totalPublicacoes: number;
+      tribunais: string[];
+      ultimaPublicacao: string | null; // ISO
+    };
+
+/** Consulta rápida dos dados do advogado (nome, tribunais, publicações) no DJEN. */
+export async function consultarAdvogadoOab(
+  numeroOabBruto: string,
+  ufBruta: string
+): Promise<AdvogadoOabResult> {
+  const numeroOab = soDigitos(numeroOabBruto);
+  const uf = ufBruta.toUpperCase();
+  if (!numeroOab || numeroOab.length > 7 || !UFS.includes(uf)) {
+    return { error: "Informe o número e a UF da OAB." };
+  }
+
+  const escritorioId = await requireEscritorioId();
+  const rl = rateLimit(`oab-consulta:${escritorioId}`, 8, 60_000);
+  if (!rl.ok) {
+    return { error: `Muitas consultas seguidas. Aguarde ${rl.retryAfterSec}s.` };
+  }
+
+  try {
+    const a = await consultarAdvogado(numeroOab, uf);
+    return { ...a, ultimaPublicacao: a.ultimaPublicacao?.toISOString() ?? null };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Falha ao consultar o DJEN." };
+  }
+}
 
 export async function importarProcessosPorOab(
   _prev: ImportOabState,
