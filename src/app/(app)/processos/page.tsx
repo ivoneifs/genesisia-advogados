@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { Plus, RefreshCw, Search, ChevronDown } from "lucide-react";
 import ProcessosToolbar from "@/components/processos-toolbar";
+import ImportarOabForm from "@/components/importar-oab-form";
 import { requireEscritorioId } from "@/lib/session";
 
 export default async function ProcessosPage({
@@ -70,6 +71,8 @@ export default async function ProcessosPage({
           </Link>
         </div>
       </div>
+
+      <ImportarOabForm />
 
       <form className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[220px]">
