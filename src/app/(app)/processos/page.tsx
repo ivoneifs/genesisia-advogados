@@ -5,6 +5,10 @@ import { Plus, RefreshCw, Search, ChevronDown } from "lucide-react";
 import ProcessosToolbar from "@/components/processos-toolbar";
 import ImportarOabForm from "@/components/importar-oab-form";
 import { requireEscritorioId } from "@/lib/session";
+import { parseAdvogados, formatAdvogado, formatOab } from "@/lib/advogados";
+
+// Arquivado/encerrado aparecem como "Inativo" na lista.
+const STATUS_INATIVOS = ["ARQUIVADO", "ENCERRADO"];
 
 export default async function ProcessosPage({
   searchParams,
@@ -12,13 +16,17 @@ export default async function ProcessosPage({
   searchParams: Promise<{ status?: string; q?: string }>;
 }) {
   const { status, q } = await searchParams;
-  const currentStatus = status ?? "ATIVO";
+  const currentStatus = status ?? "TODOS";
   const escritorioId = await requireEscritorioId();
 
   const processos = await prisma.processo.findMany({
     where: {
       escritorioId,
-      ...(currentStatus !== "TODOS" ? { status: currentStatus } : {}),
+      ...(currentStatus === "INATIVO"
+        ? { status: { in: STATUS_INATIVOS } }
+        : currentStatus !== "TODOS"
+          ? { status: currentStatus }
+          : {}),
       ...(q
         ? {
             OR: [
@@ -34,10 +42,11 @@ export default async function ProcessosPage({
   });
 
   const statusOptions = [
+    { value: "TODOS", label: "Todos" },
     { value: "ATIVO", label: "Ativos" },
+    { value: "INATIVO", label: "Inativos" },
     { value: "ARQUIVADO", label: "Arquivados" },
     { value: "ENCERRADO", label: "Encerrados" },
-    { value: "TODOS", label: "Todos" },
   ];
 
   return (
@@ -54,6 +63,7 @@ export default async function ProcessosPage({
               area: p.area ?? "",
               status: p.status,
               tribunal: [p.tribunal, p.vara].filter(Boolean).join(" - "),
+              advogados: parseAdvogados(p.advogados).map(formatAdvogado).join("; "),
             }))}
           />
           <Link
@@ -124,6 +134,7 @@ export default async function ProcessosPage({
               <th className="px-5 py-3 font-medium">Título</th>
               <th className="px-5 py-3 font-medium">Cliente / Pasta</th>
               <th className="px-5 py-3 font-medium">Ação / Foro</th>
+              <th className="px-5 py-3 font-medium">Advogados</th>
               <th className="px-5 py-3 font-medium">Últ. mov.</th>
             </tr>
           </thead>
@@ -135,7 +146,7 @@ export default async function ProcessosPage({
                     href={`/processos/${p.id}`}
                     className="font-medium text-gray-900 hover:text-[var(--brand)] block"
                   >
-                    {p.cliente.nome}
+                    <SituacaoTag status={p.status} /> {p.cliente.nome}
                     {p.parteContraria && (
                       <span className="font-normal text-gray-500">
                         {" "}
@@ -144,7 +155,7 @@ export default async function ProcessosPage({
                     )}
                   </Link>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    Processo {currentStatus === "TODOS" ? "" : "ativo"} ·{" "}
+                    Processo ·{" "}
                     <span className="underline">{p.numero}</span>
                   </p>
                 </td>
@@ -155,6 +166,9 @@ export default async function ProcessosPage({
                     {[p.tribunal, p.vara].filter(Boolean).join(" · ")}
                   </p>
                 </td>
+                <td className="px-5 py-3 text-xs">
+                  <AdvogadosCell json={p.advogados} />
+                </td>
                 <td className="px-5 py-3 text-gray-500 text-xs whitespace-nowrap">
                   {p.prazos[0] ? formatDate(p.prazos[0].dataVencimento) : "—"}
                 </td>
@@ -162,7 +176,7 @@ export default async function ProcessosPage({
             ))}
             {processos.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-5 py-10 text-center text-gray-400">
+                <td colSpan={5} className="px-5 py-10 text-center text-gray-400">
                   Nenhum processo encontrado.
                 </td>
               </tr>
@@ -171,5 +185,42 @@ export default async function ProcessosPage({
         </table>
       </div>
     </div>
+  );
+}
+
+function AdvogadosCell({ json }: { json: unknown }) {
+  const advogados = parseAdvogados(json);
+  if (advogados.length === 0) return <span className="text-gray-400">—</span>;
+  const visiveis = advogados.slice(0, 3);
+  return (
+    <ul className="space-y-0.5">
+      {visiveis.map((a) => (
+        <li key={`${a.oab}/${a.uf}`}>
+          <span className="text-gray-700">{a.nome}</span>{" "}
+          <span className="text-gray-400 whitespace-nowrap">{formatOab(a)}</span>
+        </li>
+      ))}
+      {advogados.length > visiveis.length && (
+        <li className="text-gray-400">
+          +{advogados.length - visiveis.length} advogado
+          {advogados.length - visiveis.length !== 1 && "s"}
+        </li>
+      )}
+    </ul>
+  );
+}
+
+function SituacaoTag({ status }: { status: string }) {
+  const inativo = STATUS_INATIVOS.includes(status);
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset align-middle ${
+        inativo
+          ? "bg-gray-100 text-gray-600 ring-gray-500/20"
+          : "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
+      }`}
+    >
+      {inativo ? "Inativo" : "Ativo"}
+    </span>
   );
 }

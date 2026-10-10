@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
+import { pecaPorId, ESTRUTURA } from "@/lib/biblioteca-pecas";
 
 export const runtime = "nodejs";
 
@@ -31,7 +32,19 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
-  const instrucao = String(body?.instrucao ?? "").trim();
+  const peca = body?.pecaId ? pecaPorId(String(body.pecaId)) : undefined;
+  const detalhes = String(body?.detalhes ?? "").trim().slice(0, 8000);
+  // Peça da biblioteca: a instrução é montada aqui, a partir do catálogo.
+  const instrucao = peca
+    ? [
+        `Redija a peça "${peca.nome}" (área: ${peca.area}).`,
+        `Fundamento legal de referência: ${peca.base}.`,
+        `Estrutura esperada: ${ESTRUTURA[peca.tipo]}`,
+        detalhes
+          ? `Fatos e detalhes do caso informados pelo advogado:\n${detalhes}`
+          : "O advogado não informou os fatos: use placeholders entre colchetes para fatos, datas e valores.",
+      ].join("\n\n")
+    : String(body?.instrucao ?? "").trim();
   const clienteId = String(body?.clienteId ?? "") || null;
   const processoId = String(body?.processoId ?? "") || null;
 
@@ -86,7 +99,7 @@ ${contexto ? `\nDados disponíveis para usar no documento:\n${contexto}` : ""}`;
   try {
     const response = await client.chat.completions.create({
       model: MODEL,
-      max_tokens: 3000,
+      max_tokens: peca ? 6000 : 3000,
       messages: [
         { role: "system", content: system },
         { role: "user", content: instrucao },

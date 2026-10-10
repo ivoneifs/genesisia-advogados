@@ -2,6 +2,8 @@
 // API pública: https://comunicaapi.pje.jus.br — limite de ~20 requisições/min.
 // Cada item é uma comunicação (intimação/edital); agrupamos por processo.
 
+import type { Advogado } from "@/lib/advogados";
+
 const API = "https://comunicaapi.pje.jus.br/api/v1/comunicacao";
 const POR_PAGINA = 100;
 const MAX_PAGINAS = 15; // até 1.500 comunicações por busca
@@ -23,6 +25,9 @@ type ComunicacaoApi = {
   link: string | null;
   meiocompleto: string | null;
   destinatarios?: { nome: string; polo: string }[];
+  destinatarioadvogados?: {
+    advogado?: { nome: string; numero_oab: string; uf_oab: string } | null;
+  }[];
 };
 
 export type ComunicacaoDjen = {
@@ -39,6 +44,7 @@ export type ProcessoDjen = {
   classe: string | null;
   poloAtivo: string[];
   poloPassivo: string[];
+  advogados: Advogado[];
   comunicacoes: ComunicacaoDjen[]; // mais recente primeiro
 };
 
@@ -104,6 +110,7 @@ export async function buscarProcessosPorOab(
         classe: it.nomeClasse ? capitalizar(it.nomeClasse) : null,
         poloAtivo: [],
         poloPassivo: [],
+        advogados: [],
         comunicacoes: [],
       };
       porNumero.set(numero, p);
@@ -111,6 +118,15 @@ export async function buscarProcessosPorOab(
     for (const d of it.destinatarios ?? []) {
       const lista = d.polo === "P" ? p.poloPassivo : p.poloAtivo;
       if (d.nome && !lista.includes(d.nome)) lista.push(d.nome);
+    }
+    for (const da of it.destinatarioadvogados ?? []) {
+      const a = da.advogado;
+      if (!a?.nome || !a.numero_oab) continue;
+      const oab = a.numero_oab.trim();
+      const uf = (a.uf_oab ?? "").trim().toUpperCase();
+      if (!p.advogados.some((x) => x.oab === oab && x.uf === uf)) {
+        p.advogados.push({ nome: a.nome.trim(), oab, uf });
+      }
     }
     p.comunicacoes.push({
       data: new Date(`${it.data_disponibilizacao}T12:00:00Z`),

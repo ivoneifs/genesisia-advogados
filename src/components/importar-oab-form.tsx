@@ -26,8 +26,9 @@ export default function ImportarOabForm() {
             Importar processos pela OAB
           </p>
           <p className="text-xs text-gray-500 mt-0.5">
-            Busca no Diário de Justiça Eletrônico Nacional (CNJ) todos os
-            processos com publicações para o advogado.
+            Busca no Diário de Justiça Eletrônico Nacional (CNJ) os processos
+            do advogado e marca cada um como Ativo ou Inativo (baixado ou
+            arquivado, conforme o DataJud do CNJ).
           </p>
         </div>
         <div>
@@ -72,7 +73,7 @@ export default function ImportarOabForm() {
           ) : (
             <DownloadCloud size={15} />
           )}
-          {pending ? "Buscando..." : "Buscar processos"}
+          {pending ? "Buscando (até 1 min)..." : "Buscar processos"}
         </button>
       </form>
 
@@ -85,18 +86,21 @@ export default function ImportarOabForm() {
             <p>Nenhum processo com publicações encontrado para a OAB {state.oab}.</p>
           ) : (
             <p>
-              OAB {state.oab}: <strong>{state.encontrados}</strong> processo
-              {state.encontrados !== 1 && "s"} encontrado
-              {state.encontrados !== 1 && "s"}, <strong>{state.novos}</strong>{" "}
-              novo{state.novos !== 1 && "s"} cadastrado
+              OAB {state.oab}: <strong>{state.ativos}</strong> processo
+              {state.ativos !== 1 && "s"} ativo{state.ativos !== 1 && "s"}
+              {state.arquivados > 0 && (
+                <> e {state.arquivados} arquivado{state.arquivados !== 1 && "s"}/baixado
+                {state.arquivados !== 1 && "s"}</>
+              )}
+              . {state.novos} novo{state.novos !== 1 && "s"} cadastrado
               {state.novos !== 1 && "s"} e {state.publicacoes} publicaç
               {state.publicacoes !== 1 ? "ões" : "ão"} importada
               {state.publicacoes !== 1 && "s"}.{" "}
               <Link
-                href="/processos?status=TODOS"
+                href="/processos"
                 className="font-medium text-[var(--brand)] underline"
               >
-                Ver todos
+                Ver processos
               </Link>
               {state.incompleto && (
                 <span className="block text-xs text-amber-600 mt-1">

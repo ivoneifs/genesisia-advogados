@@ -76,6 +76,7 @@ model Processo {
   parteContraria String?
   valorCausa     Float?
   descricao      String?
+  advogados      Json?    // [{ nome, oab, uf }] vindos do DJEN
   createdAt      DateTime @default(now())
 
   escritorioId   String
