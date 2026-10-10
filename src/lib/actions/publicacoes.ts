@@ -54,6 +54,33 @@ export async function createPublicacao(formData: FormData) {
   revalidatePath("/dashboard");
 }
 
+export async function updatePublicacao(id: string, formData: FormData) {
+  const conteudo = String(formData.get("conteudo") ?? "").trim();
+  if (!conteudo) return;
+
+  const escritorioId = await requireEscritorioId();
+  const numeroDigitado = String(formData.get("processoNumero") ?? "").trim();
+  const processoId = numeroDigitado ? await resolverProcesso(formData, escritorioId) : null;
+  if (numeroDigitado && !processoId) redirect(`/publicacoes/${id}/editar?erro=processo`);
+  const data = String(formData.get("dataPublicacao") ?? "");
+  const status = String(formData.get("status") ?? "") === "TRATADA" ? "TRATADA" : "NAO_TRATADA";
+
+  await prisma.publicacao.updateMany({
+    where: { id, escritorioId },
+    data: {
+      conteudo,
+      diario: String(formData.get("diario") ?? "").trim() || null,
+      dataPublicacao: /^\d{4}-\d{2}-\d{2}$/.test(data) ? new Date(`${data}T00:00:00Z`) : null,
+      processoId,
+      status,
+    },
+  });
+
+  revalidatePath("/publicacoes");
+  if (processoId) revalidatePath(`/processos/${processoId}`);
+  redirect(`/publicacoes/${id}`);
+}
+
 export async function vincularPublicacao(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;

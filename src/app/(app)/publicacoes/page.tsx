@@ -20,11 +20,16 @@ import {
   ChevronLeft,
   ChevronRight,
   CheckCheck,
+  Eye,
+  Pencil,
 } from "lucide-react";
 import { requireEscritorioId } from "@/lib/session";
 
 const POR_PAGINA = 30;
 const TAMANHO_PREVIA = 700;
+
+const botao =
+  "inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors";
 
 const FILTROS = [
   { value: "NAO_TRATADA", label: "Não tratadas" },
@@ -228,29 +233,37 @@ export default async function PublicacoesPage({
             const cortada = (previa?.tamanho ?? 0) > TAMANHO_PREVIA;
             return (
               <li key={p.id} className="px-5 py-4 space-y-2">
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-gray-800 whitespace-pre-wrap break-words">
                       {previa?.previa}
                       {cortada && "…"}
                     </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <Link
                       href={`/publicacoes/${p.id}`}
-                      className="mt-1 inline-block text-xs font-medium text-[var(--brand)] hover:underline"
+                      className={`${botao} hover:bg-gray-50 hover:text-[var(--brand)]`}
                     >
-                      {cortada ? "Ler publicação completa" : "Abrir"}
+                      <Eye size={13} /> Abrir
                     </Link>
-                  </div>
-                  <form action={deletePublicacao}>
-                    <input type="hidden" name="id" value={p.id} />
-                    <button
-                      type="submit"
-                      title="Excluir"
-                      className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 shrink-0"
+                    <Link
+                      href={`/publicacoes/${p.id}/editar`}
+                      className={`${botao} hover:bg-gray-50 hover:text-[var(--brand)]`}
                     >
-                      <Trash2 size={14} />
-                    </button>
-                  </form>
+                      <Pencil size={13} /> Editar
+                    </Link>
+                    <form action={deletePublicacao}>
+                      <input type="hidden" name="id" value={p.id} />
+                      <input type="hidden" name="voltar" value={urlAtual} />
+                      <button
+                        type="submit"
+                        className={`${botao} hover:bg-red-50 hover:text-red-600 hover:border-red-200`}
+                      >
+                        <Trash2 size={13} /> Excluir
+                      </button>
+                    </form>
+                  </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
                   <Badge value={p.status} />
