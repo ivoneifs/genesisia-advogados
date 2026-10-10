@@ -49,6 +49,8 @@ export async function runWorkflows(
     if (gatilho === "PRAZO_ALTA" && ctx.prazoVencimento) {
       titulo = `Preparar: ${ctx.prazoTitulo ?? "prazo"}`;
       data = addDays(ctx.prazoVencimento, -wf.diasAntes);
+      // Prazo é data "só dia" (meia-noite UTC): agenda às 9h de Brasília.
+      data.setUTCHours(12, 0, 0, 0);
     } else if (gatilho === "PUBLICACAO_NOVA") {
       titulo = "Revisar publicação recebida";
       data = new Date();

@@ -5,9 +5,11 @@ export function formatCurrency(value: number) {
   });
 }
 
+// Datas "só dia" (prazos, vencimentos, publicações) são gravadas à meia-noite
+// UTC; por isso formatDate/daysUntil as leem em UTC.
 export function formatDate(date: Date | string) {
   const d = typeof date === "string" ? new Date(date) : date;
-  return d.toLocaleDateString("pt-BR");
+  return d.toLocaleDateString("pt-BR", { timeZone: "UTC" });
 }
 
 export function formatDateTime(date: Date | string) {
@@ -23,11 +25,10 @@ export function formatDateTime(date: Date | string) {
 
 export function daysUntil(date: Date | string) {
   const d = typeof date === "string" ? new Date(date) : date;
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  const target = new Date(d);
-  target.setHours(0, 0, 0, 0);
-  return Math.round((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  // "Hoje" é o dia corrente em Brasília; o alvo é o dia gravado (UTC).
+  const hoje = Date.parse(`${toInputDateTimeBR(new Date()).slice(0, 10)}T00:00:00Z`);
+  const alvo = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  return Math.round((alvo - hoje) / (1000 * 60 * 60 * 24));
 }
 
 // Data/hora no fuso de Brasília (o servidor roda em UTC). O Brasil não tem
@@ -70,4 +71,16 @@ export function parseInputDateTimeBR(value: string): Date | null {
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return null;
   const d = new Date(`${value}:00-03:00`);
   return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/** Data (dd/mm/aaaa) de um instante, no fuso de Brasília. */
+export function formatDateBR(date: Date | string) {
+  const d = typeof date === "string" ? new Date(date) : date;
+  return d.toLocaleDateString("pt-BR", { timeZone: FUSO_BR });
+}
+
+/** Instante da meia-noite (Brasília) do dia de hoje + `dias`. */
+export function inicioDoDiaBR(dias = 0): Date {
+  const hoje = toInputDateTimeBR(new Date()).slice(0, 10);
+  return new Date(Date.parse(`${hoje}T00:00:00-03:00`) + dias * 86_400_000);
 }

@@ -1,6 +1,6 @@
 import type OpenAI from "openai";
 import { prisma } from "@/lib/db";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency, formatDate, formatDateTimeBR } from "@/lib/format";
 
 export const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
@@ -153,7 +153,7 @@ export async function executeTool(
         "",
         "Agenda:",
         ...(processo.tarefas.length
-          ? processo.tarefas.map((t) => `  - ${t.titulo} | ${formatDate(t.data)} | ${t.concluida ? "concluída" : "pendente"}`)
+          ? processo.tarefas.map((t) => `  - ${t.titulo} | ${formatDateTimeBR(t.data)} | ${t.concluida ? "concluída" : "pendente"}`)
           : ["  (nenhuma)"]),
         "",
         "Financeiro:",

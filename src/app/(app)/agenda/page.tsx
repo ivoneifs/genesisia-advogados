@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatDateTimeBR } from "@/lib/format";
 import { createTarefa, deleteTarefa, toggleTarefa } from "@/lib/actions/tarefas";
 import Badge from "@/components/badge";
 import { CheckCircle2, Circle, Trash2, Plus, CalendarClock } from "lucide-react";
@@ -138,7 +138,7 @@ export default async function AgendaPage() {
                     {t.titulo}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {formatDate(t.data)}
+                    {formatDateTimeBR(t.data)}
                     {t.processo && ` · Proc. ${t.processo.numero}`}
                   </p>
                 </div>
