@@ -84,3 +84,12 @@ export function inicioDoDiaBR(dias = 0): Date {
   const hoje = toInputDateTimeBR(new Date()).slice(0, 10);
   return new Date(Date.parse(`${hoje}T00:00:00-03:00`) + dias * 86_400_000);
 }
+
+/**
+ * Hoje (dia de Brasília) + `dias`, no formato das datas "só dia"
+ * (meia-noite UTC), para comparar com prazos e vencimentos.
+ */
+export function diaBRSoDia(dias = 0): Date {
+  const hoje = toInputDateTimeBR(new Date()).slice(0, 10);
+  return new Date(Date.parse(`${hoje}T00:00:00Z`) + dias * 86_400_000);
+}
