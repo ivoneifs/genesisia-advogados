@@ -27,8 +27,8 @@ export default function ImportarOabForm() {
           </p>
           <p className="text-xs text-gray-500 mt-0.5">
             Busca no Diário de Justiça Eletrônico Nacional (CNJ) os processos
-            do advogado e mostra os ativos. Baixados ou arquivados vão para o
-            filtro &quot;Arquivados&quot;.
+            do advogado e marca cada um como Ativo ou Inativo (baixado ou
+            arquivado, conforme o DataJud do CNJ).
           </p>
         </div>
         <div>
@@ -100,7 +100,7 @@ export default function ImportarOabForm() {
                 href="/processos"
                 className="font-medium text-[var(--brand)] underline"
               >
-                Ver ativos
+                Ver processos
               </Link>
               {state.incompleto && (
                 <span className="block text-xs text-amber-600 mt-1">
