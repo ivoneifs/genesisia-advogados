@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { getSession, requireEscritorioId } from "@/lib/session";
 import { rateLimit } from "@/lib/rate-limit";
 import { buscarProcessosPorOab, UFS } from "@/lib/djen";
+import { processosEncerrados } from "@/lib/datajud";
 
 export type ImportOabState =
   | { error: string }
@@ -12,6 +13,8 @@ export type ImportOabState =
       success: true;
       oab: string;
       encontrados: number;
+      ativos: number;
+      arquivados: number;
       novos: number;
       publicacoes: number;
       incompleto: boolean;
@@ -21,6 +24,7 @@ export type ImportOabState =
 // Processos importados entram vinculados a este cliente até o advogado
 // reclassificar (o DJEN não informa qual das partes é o cliente).
 const CLIENTE_IMPORTADOS = "Importados via OAB (a classificar)";
+const PREFIXO_IMPORTADO = "Importado do DJEN";
 
 const soDigitos = (s: string) => s.replace(/\D/g, "");
 
@@ -56,29 +60,50 @@ export async function importarProcessosPorOab(
       success: true,
       oab,
       encontrados: 0,
+      ativos: 0,
+      arquivados: 0,
       novos: 0,
       publicacoes: 0,
       incompleto: false,
     };
   }
 
+  // Situação no DataJud (CNJ): baixados/arquivados entram como ARQUIVADO,
+  // e a lista (filtro padrão "Ativos") mostra só os ativos. Se o DataJud
+  // falhar ou não conhecer o processo, ele fica ATIVO.
+  const encerrados = await processosEncerrados(resultado.processos).catch(
+    () => new Set<string>()
+  );
+  const statusDe = (numero: string) =>
+    encerrados.has(soDigitos(numero)) ? "ARQUIVADO" : "ATIVO";
+
   // Processos que o escritório já tem (compara só os dígitos do número CNJ).
   const existentes = await prisma.processo.findMany({
     where: { escritorioId },
-    select: { id: true, numero: true },
+    select: { id: true, numero: true, status: true, descricao: true },
   });
   const idPorNumero = new Map(existentes.map((p) => [soDigitos(p.numero), p.id]));
+  const existentePorId = new Map(existentes.map((p) => [p.id, p]));
 
   let novos = 0;
   let clienteId: string | null = null;
   for (const p of resultado.processos) {
     const existenteId = idPorNumero.get(soDigitos(p.numero));
     if (existenteId) {
-      // Mantém a lista de advogados atualizada também nos que já existiam.
-      if (p.advogados.length) {
+      // Atualiza advogados e, nos que vieram da importação e seguem ATIVO,
+      // arquiva se o DataJud indicar baixa. Status editado à mão é preservado.
+      const atual = existentePorId.get(existenteId)!;
+      const arquivar =
+        atual.status === "ATIVO" &&
+        !!atual.descricao?.startsWith(PREFIXO_IMPORTADO) &&
+        statusDe(p.numero) === "ARQUIVADO";
+      if (p.advogados.length || arquivar) {
         await prisma.processo.updateMany({
           where: { id: existenteId, escritorioId },
-          data: { advogados: p.advogados },
+          data: {
+            ...(p.advogados.length ? { advogados: p.advogados } : {}),
+            ...(arquivar ? { status: "ARQUIVADO" } : {}),
+          },
         });
       }
       continue;
@@ -107,12 +132,12 @@ export async function importarProcessosPorOab(
         numero: p.numero,
         escritorioId,
         clienteId,
-        status: "ATIVO",
+        status: statusDe(p.numero),
         area: p.classe,
         tribunal: p.tribunal,
         vara: p.vara,
         parteContraria: p.poloPassivo.join(", ") || null,
-        descricao: [`Importado do DJEN pela OAB ${oab}.`, ...partes].join("\n"),
+        descricao: [`${PREFIXO_IMPORTADO} pela OAB ${oab}.`, ...partes].join("\n"),
         advogados: p.advogados,
         responsavelId: session?.userId ?? null,
       },
@@ -165,6 +190,8 @@ export async function importarProcessosPorOab(
     success: true,
     oab,
     encontrados: resultado.processos.length,
+    arquivados: resultado.processos.filter((p) => statusDe(p.numero) === "ARQUIVADO").length,
+    ativos: resultado.processos.filter((p) => statusDe(p.numero) === "ATIVO").length,
     novos,
     publicacoes: novasPublicacoes.length,
     incompleto: resultado.incompleto,
