@@ -4,7 +4,12 @@ import { deleteCliente } from "@/lib/actions/clientes";
 import { requireEscritorioId } from "@/lib/session";
 import { Plus, Trash2, Pencil } from "lucide-react";
 
-export default async function ClientesPage() {
+export default async function ClientesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ erro?: string; n?: string }>;
+}) {
+  const { erro, n } = await searchParams;
   const escritorioId = await requireEscritorioId();
   const clientes = await prisma.cliente.findMany({
     where: { escritorioId },
@@ -29,6 +34,14 @@ export default async function ClientesPage() {
           <Plus size={16} /> Novo cliente
         </Link>
       </div>
+
+      {erro === "processos" && (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
+          Este cliente tem {n ?? "alguns"} processo{n !== "1" && "s"} vinculado
+          {n !== "1" && "s"} e não pode ser excluído. Exclua os processos ou
+          vincule-os a outro cliente antes.
+        </p>
+      )}
 
       <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
         <table className="w-full text-sm">

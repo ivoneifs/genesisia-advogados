@@ -33,9 +33,11 @@ export async function GET(
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": documento.arquivoTipo ?? "application/octet-stream",
-        "Content-Disposition": `attachment; filename="${encodeURIComponent(
-          documento.arquivoNome
-        )}"`,
+        // filename* (RFC 5987) preserva acentos; filename é o fallback ASCII.
+        "Content-Disposition": `attachment; filename="${documento.arquivoNome
+          .normalize("NFD")
+          .replace(/[^\x20-\x7e]/g, "")
+          .replace(/"/g, "")}"; filename*=UTF-8''${encodeURIComponent(documento.arquivoNome)}`,
       },
     });
   } catch {

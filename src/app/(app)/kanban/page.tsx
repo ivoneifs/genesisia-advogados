@@ -16,13 +16,32 @@ const COLUNAS = [
   { status: "ENCERRADO", label: "Encerrados", next: "ATIVO", nextLabel: "Reabrir" },
 ];
 
+// Cartões por coluna (o total aparece no contador; o restante fica na lista).
+const POR_COLUNA = 30;
+
 export default async function KanbanPage() {
   const escritorioId = await requireEscritorioId();
-  const processos = await prisma.processo.findMany({
-    where: { escritorioId },
-    orderBy: { createdAt: "desc" },
-    include: { cliente: true, _count: { select: { prazos: true } } },
-  });
+  const colunas = await Promise.all(
+    COLUNAS.map(async (col) => {
+      const where = { escritorioId, status: col.status };
+      const [total, items] = await Promise.all([
+        prisma.processo.count({ where }),
+        prisma.processo.findMany({
+          where,
+          orderBy: { createdAt: "desc" },
+          take: POR_COLUNA,
+          select: {
+            id: true,
+            numero: true,
+            area: true,
+            valorCausa: true,
+            cliente: { select: { nome: true } },
+          },
+        }),
+      ]);
+      return { ...col, total, items };
+    })
+  );
 
   return (
     <div className="space-y-6">
@@ -36,8 +55,8 @@ export default async function KanbanPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {COLUNAS.map((col) => {
-          const items = processos.filter((p) => p.status === col.status);
+        {colunas.map((col) => {
+          const { items } = col;
           return (
             <div key={col.status} className="rounded-xl border border-gray-200 bg-gray-50/60">
               <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
@@ -45,7 +64,7 @@ export default async function KanbanPage() {
                   {col.label}
                 </h2>
                 <span className="text-xs text-gray-500 bg-white rounded-full px-2 py-0.5 border border-gray-200">
-                  {items.length}
+                  {col.total.toLocaleString("pt-BR")}
                 </span>
               </div>
               <div className="p-3 space-y-3 min-h-[120px]">
@@ -83,6 +102,14 @@ export default async function KanbanPage() {
                     </form>
                   </div>
                 ))}
+                {col.total > items.length && (
+                  <Link
+                    href={`/processos?status=${col.status}`}
+                    className="block text-center text-xs font-medium text-[var(--brand)] hover:underline py-2"
+                  >
+                    Ver todos os {col.total.toLocaleString("pt-BR")} na lista
+                  </Link>
+                )}
                 {items.length === 0 && (
                   <p className="text-xs text-gray-400 px-1 py-4 text-center">
                     Nenhum processo aqui.
