@@ -219,6 +219,8 @@ model Atendimento {
   id         String   @id @default(cuid())
   titulo     String
   descricao  String?
+  tipo       String   @default("PRESENCIAL") // PRESENCIAL | TELEFONE | WHATSAPP | EMAIL | VIDEO
+  status     String   @default("CONCLUIDO") // ABERTO | CONCLUIDO
   data       DateTime @default(now())
   createdAt  DateTime @default(now())
 
