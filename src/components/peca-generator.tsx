@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import { TEMPLATES } from "@/lib/templates";
 import { BIBLIOTECA, AREAS } from "@/lib/biblioteca-pecas";
-import { Copy, Check, Sparkles, Wand2, AlertCircle, BookOpen, Search } from "lucide-react";
+import { Copy, Check, Sparkles, Wand2, AlertCircle, BookOpen, Search, FileDown } from "lucide-react";
+import { baixarDocx } from "@/lib/exportar-docx";
 import type { Cliente, Processo } from "@prisma/client";
 
 type ProcessoComCliente = Processo & { cliente: Cliente };
@@ -108,6 +109,12 @@ export default function PecaGenerator({
   }
 
   const textoAtual = modo === "modelo" ? textoModelo : textoIA;
+  const tituloAtual =
+    modo === "modelo"
+      ? (TEMPLATES.find((t) => t.id === templateId) ?? TEMPLATES[0]).nome
+      : modo === "biblioteca" && pecaSelecionada
+        ? pecaSelecionada.nome
+        : "Minuta";
 
   return (
     <div className="space-y-4">
@@ -362,19 +369,29 @@ export default function PecaGenerator({
         <div className="rounded-xl border border-gray-200 bg-white flex flex-col">
           <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
             <h2 className="text-sm font-medium text-gray-900">Pré-visualização</h2>
-            <button
-              type="button"
-              onClick={() => {
-                navigator.clipboard.writeText(textoAtual);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 1500);
-              }}
-              disabled={!textoAtual}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--brand)] hover:underline disabled:opacity-40 disabled:no-underline"
-            >
-              {copied ? <Check size={13} /> : <Copy size={13} />}
-              {copied ? "Copiado" : "Copiar texto"}
-            </button>
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => baixarDocx(textoAtual, tituloAtual)}
+                disabled={!textoAtual || loading}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--brand)] hover:underline disabled:opacity-40 disabled:no-underline"
+              >
+                <FileDown size={13} /> Baixar Word
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(textoAtual);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 1500);
+                }}
+                disabled={!textoAtual}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--brand)] hover:underline disabled:opacity-40 disabled:no-underline"
+              >
+                {copied ? <Check size={13} /> : <Copy size={13} />}
+                {copied ? "Copiado" : "Copiar texto"}
+              </button>
+            </div>
           </div>
           <textarea
             readOnly={modo === "modelo"}
@@ -389,7 +406,7 @@ export default function PecaGenerator({
                   ? "Escolha a peça, descreva os fatos e clique em Gerar peça."
                   : ""
             }
-            className="flex-1 min-h-[420px] w-full resize-none border-0 px-5 py-4 text-sm text-gray-800 leading-relaxed focus:outline-none font-mono"
+            className="flex-1 min-h-[520px] w-full resize-y border-0 px-6 py-5 text-[15px] text-gray-800 leading-7 focus:outline-none font-serif text-justify"
           />
         </div>
       </div>
