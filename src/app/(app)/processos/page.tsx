@@ -5,6 +5,7 @@ import { Plus, RefreshCw, Search, ChevronDown } from "lucide-react";
 import ProcessosToolbar from "@/components/processos-toolbar";
 import ImportarOabForm from "@/components/importar-oab-form";
 import { requireEscritorioId } from "@/lib/session";
+import { parseAdvogados, formatAdvogado, formatOab } from "@/lib/advogados";
 
 export default async function ProcessosPage({
   searchParams,
@@ -54,6 +55,7 @@ export default async function ProcessosPage({
               area: p.area ?? "",
               status: p.status,
               tribunal: [p.tribunal, p.vara].filter(Boolean).join(" - "),
+              advogados: parseAdvogados(p.advogados).map(formatAdvogado).join("; "),
             }))}
           />
           <Link
@@ -124,6 +126,7 @@ export default async function ProcessosPage({
               <th className="px-5 py-3 font-medium">Título</th>
               <th className="px-5 py-3 font-medium">Cliente / Pasta</th>
               <th className="px-5 py-3 font-medium">Ação / Foro</th>
+              <th className="px-5 py-3 font-medium">Advogados</th>
               <th className="px-5 py-3 font-medium">Últ. mov.</th>
             </tr>
           </thead>
@@ -155,6 +158,9 @@ export default async function ProcessosPage({
                     {[p.tribunal, p.vara].filter(Boolean).join(" · ")}
                   </p>
                 </td>
+                <td className="px-5 py-3 text-xs">
+                  <AdvogadosCell json={p.advogados} />
+                </td>
                 <td className="px-5 py-3 text-gray-500 text-xs whitespace-nowrap">
                   {p.prazos[0] ? formatDate(p.prazos[0].dataVencimento) : "—"}
                 </td>
@@ -162,7 +168,7 @@ export default async function ProcessosPage({
             ))}
             {processos.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-5 py-10 text-center text-gray-400">
+                <td colSpan={5} className="px-5 py-10 text-center text-gray-400">
                   Nenhum processo encontrado.
                 </td>
               </tr>
@@ -171,5 +177,27 @@ export default async function ProcessosPage({
         </table>
       </div>
     </div>
+  );
+}
+
+function AdvogadosCell({ json }: { json: unknown }) {
+  const advogados = parseAdvogados(json);
+  if (advogados.length === 0) return <span className="text-gray-400">—</span>;
+  const visiveis = advogados.slice(0, 3);
+  return (
+    <ul className="space-y-0.5">
+      {visiveis.map((a) => (
+        <li key={`${a.oab}/${a.uf}`}>
+          <span className="text-gray-700">{a.nome}</span>{" "}
+          <span className="text-gray-400 whitespace-nowrap">{formatOab(a)}</span>
+        </li>
+      ))}
+      {advogados.length > visiveis.length && (
+        <li className="text-gray-400">
+          +{advogados.length - visiveis.length} advogado
+          {advogados.length - visiveis.length !== 1 && "s"}
+        </li>
+      )}
+    </ul>
   );
 }

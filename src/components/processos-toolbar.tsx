@@ -8,12 +8,13 @@ type Row = {
   area: string;
   status: string;
   tribunal: string;
+  advogados: string;
 };
 
 function toCsv(rows: Row[]) {
-  const header = ["Número", "Cliente", "Área", "Status", "Tribunal/Vara"];
+  const header = ["Número", "Cliente", "Área", "Status", "Tribunal/Vara", "Advogados"];
   const lines = rows.map((r) =>
-    [r.numero, r.cliente, r.area, r.status, r.tribunal]
+    [r.numero, r.cliente, r.area, r.status, r.tribunal, r.advogados]
       .map((v) => `"${v.replace(/"/g, '""')}"`)
       .join(";")
   );

@@ -6,6 +6,7 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import { createPrazo, deletePrazo, togglePrazoStatus } from "@/lib/actions/prazos";
 import { deleteProcesso } from "@/lib/actions/processos";
 import { requireEscritorioId } from "@/lib/session";
+import { parseAdvogados, formatOab } from "@/lib/advogados";
 import { Pencil, Trash2, Plus, CheckCircle2, Circle } from "lucide-react";
 
 export default async function ProcessoDetalhePage({
@@ -28,6 +29,7 @@ export default async function ProcessoDetalhePage({
   });
 
   if (!processo) notFound();
+  const advogados = parseAdvogados(processo.advogados);
 
   return (
     <div className="space-y-8">
@@ -86,6 +88,25 @@ export default async function ProcessoDetalhePage({
           value={processo.responsavel?.name ?? "—"}
         />
       </div>
+
+      {advogados.length > 0 && (
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <h2 className="text-sm font-medium text-gray-900 mb-3">
+            Advogados ({advogados.length})
+          </h2>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {advogados.map((a) => (
+              <li
+                key={`${a.oab}/${a.uf}`}
+                className="rounded-lg border border-gray-100 bg-gray-50/60 px-3 py-2"
+              >
+                <p className="text-sm font-medium text-gray-900">{a.nome}</p>
+                <p className="text-xs text-gray-500">{formatOab(a)}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {processo.descricao && (
         <div className="rounded-xl border border-gray-200 bg-white p-5">

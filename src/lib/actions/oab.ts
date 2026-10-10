@@ -72,7 +72,17 @@ export async function importarProcessosPorOab(
   let novos = 0;
   let clienteId: string | null = null;
   for (const p of resultado.processos) {
-    if (idPorNumero.has(soDigitos(p.numero))) continue;
+    const existenteId = idPorNumero.get(soDigitos(p.numero));
+    if (existenteId) {
+      // Mantém a lista de advogados atualizada também nos que já existiam.
+      if (p.advogados.length) {
+        await prisma.processo.updateMany({
+          where: { id: existenteId, escritorioId },
+          data: { advogados: p.advogados },
+        });
+      }
+      continue;
+    }
 
     if (!clienteId) {
       const cliente =
@@ -103,6 +113,7 @@ export async function importarProcessosPorOab(
         vara: p.vara,
         parteContraria: p.poloPassivo.join(", ") || null,
         descricao: [`Importado do DJEN pela OAB ${oab}.`, ...partes].join("\n"),
+        advogados: p.advogados,
         responsavelId: session?.userId ?? null,
       },
       select: { id: true },
