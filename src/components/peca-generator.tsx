@@ -5,6 +5,8 @@ import { TEMPLATES } from "@/lib/templates";
 import { BIBLIOTECA, AREAS } from "@/lib/biblioteca-pecas";
 import { Copy, Check, Sparkles, Wand2, AlertCircle, BookOpen, Search, FileDown } from "lucide-react";
 import { baixarDocx } from "@/lib/exportar-docx";
+import { assinarModelo } from "@/lib/advogados";
+import Link from "next/link";
 import type { Cliente, Processo } from "@prisma/client";
 
 type ProcessoComCliente = Processo & { cliente: Cliente };
@@ -18,10 +20,14 @@ const SUGESTOES_IA = [
 export default function PecaGenerator({
   clientes,
   processos,
+  advogados,
 }: {
   clientes: Cliente[];
   processos: ProcessoComCliente[];
+  advogados: { id: string; nome: string; oab: string; uf: string; email: string | null }[];
 }) {
+  const [advogadoId, setAdvogadoId] = useState(advogados[0]?.id ?? "");
+  const advogado = advogados.find((a) => a.id === advogadoId);
   const [modo, setModo] = useState<"modelo" | "ia" | "biblioteca">("modelo");
   const [area, setArea] = useState("");
   const [busca, setBusca] = useState("");
@@ -42,7 +48,7 @@ export default function PecaGenerator({
 
   const textoModelo = useMemo(() => {
     const template = TEMPLATES.find((t) => t.id === templateId) ?? TEMPLATES[0];
-    return template.gerar({
+    const texto = template.gerar({
       clienteNome: cliente?.nome ?? "",
       clienteDocumento: cliente?.documento ?? "",
       clienteEndereco: cliente?.endereco ?? "",
@@ -56,7 +62,8 @@ export default function PecaGenerator({
         year: "numeric",
       }),
     });
-  }, [templateId, cliente, processo]);
+    return advogado ? assinarModelo(texto, advogado) : texto;
+  }, [templateId, cliente, processo, advogado]);
 
   const pecasFiltradas = useMemo(() => {
     const q = busca
@@ -93,7 +100,7 @@ export default function PecaGenerator({
       const res = await fetch("/api/pecas/gerar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payload, clienteId, processoId }),
+        body: JSON.stringify({ ...payload, clienteId, processoId, advogadoId }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -240,6 +247,32 @@ export default function PecaGenerator({
                 )}
               </div>
             )}
+
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">
+                Advogado(a) que assina
+              </label>
+              <select
+                value={advogadoId}
+                onChange={(e) => setAdvogadoId(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
+              >
+                <option value="">—</option>
+                {advogados.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.nome} (OAB {a.oab}/{a.uf})
+                  </option>
+                ))}
+              </select>
+              {advogados.length === 0 && (
+                <p className="text-[11px] text-gray-500 mt-1">
+                  <Link href="/advogados/novo" className="text-[var(--brand)] underline">
+                    Cadastre os advogados
+                  </Link>{" "}
+                  para a assinatura sair preenchida.
+                </p>
+              )}
+            </div>
 
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">

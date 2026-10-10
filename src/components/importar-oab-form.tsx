@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { DownloadCloud, Loader2, UserRound, ExternalLink } from "lucide-react";
+import { DownloadCloud, Loader2, UserRound, ExternalLink, UserPlus } from "lucide-react";
 import {
   importarProcessosPorOab,
   consultarAdvogadoOab,
@@ -161,6 +161,18 @@ export default function ImportarOabForm() {
                     </dd>
                   </div>
                 </dl>
+                {advogadoAtual.nome && (
+                  <Link
+                    href={`/advogados/novo?${new URLSearchParams({
+                      nome: advogadoAtual.nome,
+                      oab: advogadoAtual.oab,
+                      uf: advogadoAtual.uf,
+                    })}`}
+                    className="mt-2 mr-4 inline-flex items-center gap-1 text-xs font-medium text-[var(--brand)] hover:underline"
+                  >
+                    <UserPlus size={12} /> Salvar no cadastro de advogados
+                  </Link>
+                )}
                 <a
                   href={CNA_URL}
                   target="_blank"

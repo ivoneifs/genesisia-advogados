@@ -17,6 +17,7 @@ model Escritorio {
   createdAt   DateTime  @default(now())
 
   users        User[]
+  advogados    Advogado[]
   clientes     Cliente[]
   processos    Processo[]
   prazos       Prazo[]
@@ -232,4 +233,23 @@ model Atendimento {
 
   processoId String?
   processo   Processo? @relation(fields: [processoId], references: [id], onDelete: SetNull)
+}
+
+model Advogado {
+  id          String   @id @default(cuid())
+  nome        String
+  oab         String // só dígitos
+  uf          String
+  cpf         String?
+  email       String?
+  telefone    String?
+  endereco    String? // endereço profissional
+  observacoes String?
+  ativo       Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  escritorioId String
+  escritorio   Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
+
+  @@unique([escritorioId, oab, uf])
 }
