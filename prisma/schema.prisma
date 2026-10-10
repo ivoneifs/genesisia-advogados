@@ -8,10 +8,13 @@ datasource db {
 }
 
 model Escritorio {
-  id        String   @id @default(cuid())
-  nome      String
-  ativo     Boolean  @default(true)
-  createdAt DateTime @default(now())
+  id          String    @id @default(cuid())
+  nome        String
+  ativo       Boolean   @default(true)
+  plano       String    @default("TRIAL") // TRIAL | BASICO | PRO
+  status      String    @default("TRIAL") // TRIAL | ATIVO | SUSPENSO
+  trialExpira DateTime?
+  createdAt   DateTime  @default(now())
 
   users        User[]
   clientes     Cliente[]

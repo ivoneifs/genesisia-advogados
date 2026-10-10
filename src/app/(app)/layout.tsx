@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
+import { motivoBloqueio } from "@/lib/acesso";
 import Sidebar from "@/components/sidebar";
 import Topbar from "@/components/topbar";
 
@@ -12,14 +13,17 @@ export default async function AppLayout({
   const session = await getSession();
   if (!session) redirect("/login");
 
-  if (session.role === "SUPERADMIN") redirect("/admin/usuarios");
+  if (session.role === "SUPERADMIN") redirect("/admin");
 
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
     include: { escritorio: true },
   });
 
-  if (!user || !user.ativo || !user.escritorio || !user.escritorio.ativo) {
+  if (!user || !user.ativo || !user.escritorio) {
+    redirect("/login?inativo=1");
+  }
+  if (motivoBloqueio(user.escritorio)) {
     redirect("/login?inativo=1");
   }
 

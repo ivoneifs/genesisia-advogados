@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getSession } from "@/lib/session";
 import { logoutAction } from "@/lib/actions/auth";
-import { Scale, LogOut, ShieldCheck } from "lucide-react";
+import { Scale, LogOut, ShieldCheck, LayoutDashboard, Building2 } from "lucide-react";
 
 export default async function AdminLayout({
   children,
@@ -26,17 +27,33 @@ export default async function AdminLayout({
             <ShieldCheck size={12} /> Administração
           </span>
         </div>
-        <form action={logoutAction}>
-          <button
-            type="submit"
-            title="Sair"
-            className="h-9 w-9 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-          >
-            <LogOut size={16} />
-          </button>
-        </form>
+        <div className="flex items-center gap-1">
+          <nav className="flex items-center gap-1 mr-2">
+            <Link
+              href="/admin"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg px-3 py-1.5 transition-colors"
+            >
+              <LayoutDashboard size={15} /> Painel
+            </Link>
+            <Link
+              href="/admin/escritorios"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg px-3 py-1.5 transition-colors"
+            >
+              <Building2 size={15} /> Escritórios
+            </Link>
+          </nav>
+          <form action={logoutAction}>
+            <button
+              type="submit"
+              title="Sair"
+              className="h-9 w-9 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+            >
+              <LogOut size={16} />
+            </button>
+          </form>
+        </div>
       </header>
-      <main className="max-w-5xl mx-auto p-6 lg:p-8">{children}</main>
+      <main className="max-w-6xl mx-auto p-6 lg:p-8">{children}</main>
     </div>
   );
 }

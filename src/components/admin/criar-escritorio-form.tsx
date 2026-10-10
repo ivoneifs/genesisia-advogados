@@ -58,6 +58,37 @@ export default function CriarEscritorioForm() {
           </div>
         </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">
+              Plano
+            </label>
+            <select
+              name="plano"
+              defaultValue="BASICO"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
+            >
+              <option value="TRIAL">Trial</option>
+              <option value="BASICO">Básico</option>
+              <option value="PRO">Pro</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">
+              Status inicial
+            </label>
+            <select
+              name="status"
+              defaultValue="ATIVO"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
+            >
+              <option value="ATIVO">Ativo</option>
+              <option value="TRIAL">Trial (14 dias)</option>
+              <option value="SUSPENSO">Suspenso</option>
+            </select>
+          </div>
+        </div>
+
         {state && "error" in state && (
           <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
             {state.error}

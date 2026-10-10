@@ -10,21 +10,42 @@ function daysFromNow(n) {
 }
 
 async function main() {
+  // Superadmin vem de variáveis de ambiente (seguro para produção).
+  const adminEmail = (
+    process.env.SEED_ADMIN_EMAIL || "admin@genesisia.com.br"
+  )
+    .trim()
+    .toLowerCase();
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD || "admin123";
+
   const superadmin = await prisma.user.findUnique({
-    where: { email: "admin@genesisia.com.br" },
+    where: { email: adminEmail },
   });
   if (!superadmin) {
     await prisma.user.create({
       data: {
         name: "Administrador Genesis IA",
-        email: "admin@genesisia.com.br",
-        password: await bcrypt.hash("admin123", 10),
+        email: adminEmail,
+        password: await bcrypt.hash(adminPassword, 10),
         role: "SUPERADMIN",
       },
     });
+    console.log(`Superadmin criado: ${adminEmail}`);
+    if (!process.env.SEED_ADMIN_PASSWORD) {
+      console.log(
+        "AVISO: senha padrão 'admin123' usada. Defina SEED_ADMIN_PASSWORD e troque após o 1º login."
+      );
+    }
+  } else {
+    console.log(`Superadmin já existe: ${adminEmail}`);
+  }
+
+  // Dados de exemplo só são criados sob demanda (evita demo em produção).
+  if (process.env.SEED_DEMO !== "1") {
     console.log(
-      "Superadmin criado: admin@genesisia.com.br / admin123 — troque a senha depois do primeiro login."
+      "Pulando dados demo. Use SEED_DEMO=1 para popular um escritório de exemplo."
     );
+    return;
   }
 
   const existing = await prisma.user.findUnique({
