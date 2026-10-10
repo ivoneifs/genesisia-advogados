@@ -84,7 +84,7 @@ export default async function PublicacoesPage({
   const ids = publicacoes.map((p) => p.id);
   const previas = ids.length
     ? await prisma.$queryRaw<{ id: string; previa: string; tamanho: number }[]>`
-        SELECT id, left(conteudo, ${TAMANHO_PREVIA}) AS previa, length(conteudo)::int AS tamanho
+        SELECT id, left(conteudo, ${TAMANHO_PREVIA}::int) AS previa, length(conteudo)::int AS tamanho
         FROM "Publicacao" WHERE id IN (${Prisma.join(ids)})`
     : [];
   const previaPorId = new Map(previas.map((p) => [p.id, p]));
