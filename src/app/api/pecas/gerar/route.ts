@@ -73,6 +73,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const clienteId = String(body?.clienteId ?? "") || null;
   const processoId = String(body?.processoId ?? "") || null;
+  const advogadoId = String(body?.advogadoId ?? "") || null;
   const peca = body?.pecaId ? pecaPorId(String(body.pecaId)) : undefined;
   const detalhes = String(body?.detalhes ?? "").trim().slice(0, 8000);
   // Peça da biblioteca: a instrução é montada aqui, a partir do catálogo.
@@ -93,7 +94,7 @@ export async function POST(req: NextRequest) {
 
   const escritorioId = session.escritorioId;
 
-  const [cliente, processo, escritorio] = await Promise.all([
+  const [cliente, processo, escritorio, advogado] = await Promise.all([
     clienteId
       ? prisma.cliente.findFirst({ where: { id: clienteId, escritorioId } })
       : null,
@@ -107,12 +108,21 @@ export async function POST(req: NextRequest) {
       where: { id: escritorioId },
       select: { nome: true },
     }),
+    advogadoId
+      ? prisma.advogado.findFirst({ where: { id: advogadoId, escritorioId } })
+      : null,
   ]);
 
   const advogadosProcesso = processo ? parseAdvogados(processo.advogados) : [];
   const contexto = [
     escritorio ? `Escritório: ${escritorio.nome}.` : "",
-    `Advogado(a) que assinará: ${session.name} (OAB: [nº OAB/UF]).`,
+    advogado
+      ? `Advogado(a) que assinará: ${advogado.nome}, OAB/${advogado.uf} nº ${advogado.oab}${
+          advogado.cpf ? `, CPF ${advogado.cpf}` : ""
+        }${advogado.endereco ? `, endereço profissional: ${advogado.endereco}` : ""}${
+          advogado.email ? `, e-mail: ${advogado.email}` : ""
+        }${advogado.telefone ? `, telefone: ${advogado.telefone}` : ""}.`
+      : `Advogado(a) que assinará: ${session.name} (OAB: [nº OAB/UF]).`,
     cliente
       ? `Cliente: ${cliente.nome} (${cliente.tipo === "PJ" ? "pessoa jurídica" : "pessoa física"})${
           cliente.documento ? `, ${cliente.tipo === "PJ" ? "CNPJ" : "CPF"} ${cliente.documento}` : ""

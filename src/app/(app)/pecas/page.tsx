@@ -4,12 +4,17 @@ import { requireEscritorioId } from "@/lib/session";
 
 export default async function PecasPage() {
   const escritorioId = await requireEscritorioId();
-  const [clientes, processos] = await Promise.all([
+  const [clientes, processos, advogados] = await Promise.all([
     prisma.cliente.findMany({ where: { escritorioId }, orderBy: { nome: "asc" } }),
     prisma.processo.findMany({
       where: { escritorioId },
       orderBy: { numero: "asc" },
       include: { cliente: true },
+    }),
+    prisma.advogado.findMany({
+      where: { escritorioId, ativo: true },
+      orderBy: { nome: "asc" },
+      select: { id: true, nome: true, oab: true, uf: true, email: true },
     }),
   ]);
 
@@ -24,7 +29,7 @@ export default async function PecasPage() {
           dados do cliente e processo.
         </p>
       </div>
-      <PecaGenerator clientes={clientes} processos={processos} />
+      <PecaGenerator clientes={clientes} processos={processos} advogados={advogados} />
     </div>
   );
 }
