@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { formatDate } from "@/lib/format";
+import { formatDateBR } from "@/lib/format";
 import { createDocumento, deleteDocumento } from "@/lib/actions/documentos";
 import { Trash2, Plus, FileText, Download, Paperclip } from "lucide-react";
 import { requireEscritorioId } from "@/lib/session";
@@ -156,7 +156,7 @@ export default async function DocumentosPage() {
                   {d.processo?.numero ?? d.cliente?.nome ?? "—"}
                 </td>
                 <td className="px-5 py-3 text-gray-600">
-                  {formatDate(d.createdAt)}
+                  {formatDateBR(d.createdAt)}
                 </td>
                 <td className="px-5 py-3">
                   <div className="flex items-center justify-end gap-1">

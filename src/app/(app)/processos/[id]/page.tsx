@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import Badge from "@/components/badge";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency, formatDate, formatDateTimeBR } from "@/lib/format";
 import { createPrazo, deletePrazo, togglePrazoStatus } from "@/lib/actions/prazos";
 import { deleteProcesso } from "@/lib/actions/processos";
 import { requireEscritorioId } from "@/lib/session";
@@ -236,7 +236,7 @@ export default async function ProcessoDetalhePage({
               <li key={t.id} className="px-5 py-3 flex items-center justify-between">
                 <span className="text-sm text-gray-900">{t.titulo}</span>
                 <span className="text-xs text-gray-500">
-                  {formatDate(t.data)}
+                  {formatDateTimeBR(t.data)}
                 </span>
               </li>
             ))}

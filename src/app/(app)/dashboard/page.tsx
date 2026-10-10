@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { formatCurrency, formatDate, daysUntil } from "@/lib/format";
+import {
+  formatCurrency,
+  formatDateBR,
+  formatDateTimeBR,
+  daysUntil,
+  inicioDoDiaBR,
+} from "@/lib/format";
 import Badge from "@/components/badge";
 import {
   Gavel,
@@ -33,8 +39,8 @@ export default async function DashboardPage() {
         concluida: false,
         escritorioId,
         data: {
-          gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
-          lt: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1),
+          gte: inicioDoDiaBR(),
+          lt: inicioDoDiaBR(1),
         },
       },
     }),
@@ -96,7 +102,7 @@ export default async function DashboardPage() {
           Área de trabalho
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          Visão geral do seu escritório hoje, {formatDate(now)}.
+          Visão geral do seu escritório hoje, {formatDateBR(now)}.
         </p>
       </div>
 
@@ -203,7 +209,7 @@ export default async function DashboardPage() {
                   )}
                 </div>
                 <span className="text-xs text-gray-500 shrink-0">
-                  {formatDate(t.data)}
+                  {formatDateTimeBR(t.data)}
                 </span>
               </li>
             ))}

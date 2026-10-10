@@ -3,10 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getSession, requireEscritorioId } from "@/lib/session";
+import { parseInputDateTimeBR } from "@/lib/format";
 
 export async function createTarefa(formData: FormData) {
   const titulo = String(formData.get("titulo") ?? "").trim();
-  const data = String(formData.get("data") ?? "");
+  // datetime-local digitado em horário de Brasília.
+  const data = parseInputDateTimeBR(String(formData.get("data") ?? ""));
   if (!titulo || !data) return;
 
   const session = await getSession();
@@ -16,7 +18,7 @@ export async function createTarefa(formData: FormData) {
   await prisma.tarefa.create({
     data: {
       titulo,
-      data: new Date(data),
+      data,
       tipo: String(formData.get("tipo") ?? "TAREFA"),
       descricao: String(formData.get("descricao") ?? "") || null,
       processoId,
