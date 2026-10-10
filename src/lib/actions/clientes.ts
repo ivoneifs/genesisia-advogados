@@ -55,10 +55,10 @@ export async function deleteCliente(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const escritorioId = await requireEscritorioId();
-  try {
-    await prisma.cliente.deleteMany({ where: { id, escritorioId } });
-  } catch {
-    // cliente possui processos vinculados
-  }
+  // Processos exigem cliente: exclusão bloqueada enquanto houver vínculo.
+  const processos = await prisma.processo.count({ where: { clienteId: id, escritorioId } });
+  if (processos > 0) redirect(`/clientes?erro=processos&n=${processos}`);
+
+  await prisma.cliente.deleteMany({ where: { id, escritorioId } });
   revalidatePath("/clientes");
 }

@@ -1,45 +1,40 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/format";
-import { Plus, RefreshCw, Search, ChevronDown } from "lucide-react";
+import { Plus, RefreshCw, Search, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import ProcessosToolbar from "@/components/processos-toolbar";
 import ImportarOabForm from "@/components/importar-oab-form";
 import { requireEscritorioId } from "@/lib/session";
-import { parseAdvogados, formatAdvogado, formatOab } from "@/lib/advogados";
+import { parseAdvogados, formatOab } from "@/lib/advogados";
+import { STATUS_INATIVOS, whereProcessos } from "@/lib/processos-filtro";
 
-// Arquivado/encerrado aparecem como "Inativo" na lista.
-const STATUS_INATIVOS = ["ARQUIVADO", "ENCERRADO"];
+const POR_PAGINA = 50;
 
 export default async function ProcessosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; q?: string }>;
+  searchParams: Promise<{ status?: string; q?: string; p?: string }>;
 }) {
-  const { status, q } = await searchParams;
+  const { status, q, p: paginaParam } = await searchParams;
   const currentStatus = status ?? "TODOS";
+  const pagina = Math.max(1, Number.parseInt(paginaParam ?? "1", 10) || 1);
   const escritorioId = await requireEscritorioId();
+  const where = whereProcessos(escritorioId, currentStatus, q);
 
-  const processos = await prisma.processo.findMany({
-    where: {
-      escritorioId,
-      ...(currentStatus === "INATIVO"
-        ? { status: { in: STATUS_INATIVOS } }
-        : currentStatus !== "TODOS"
-          ? { status: currentStatus }
-          : {}),
-      ...(q
-        ? {
-            OR: [
-              { numero: { contains: q } },
-              { parteContraria: { contains: q } },
-              { cliente: { nome: { contains: q } } },
-            ],
-          }
-        : {}),
-    },
-    orderBy: { createdAt: "desc" },
-    include: { cliente: true, prazos: { orderBy: { dataVencimento: "desc" }, take: 1 } },
-  });
+  const [total, processos] = await Promise.all([
+    prisma.processo.count({ where }),
+    prisma.processo.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (pagina - 1) * POR_PAGINA,
+      take: POR_PAGINA,
+      include: { cliente: true, prazos: { orderBy: { dataVencimento: "desc" }, take: 1 } },
+    }),
+  ]);
+  const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
+  const filtroQs = { status: currentStatus, ...(q ? { q } : {}) };
+  const urlPagina = (n: number) =>
+    `/processos?${new URLSearchParams({ ...filtroQs, p: String(n) })}`;
 
   const statusOptions = [
     { value: "TODOS", label: "Todos" },
@@ -56,16 +51,7 @@ export default async function ProcessosPage({
           Processos e casos
         </h1>
         <div className="flex items-center gap-2">
-          <ProcessosToolbar
-            rows={processos.map((p) => ({
-              numero: p.numero,
-              cliente: p.cliente.nome,
-              area: p.area ?? "",
-              status: p.status,
-              tribunal: [p.tribunal, p.vara].filter(Boolean).join(" - "),
-              advogados: parseAdvogados(p.advogados).map(formatAdvogado).join("; "),
-            }))}
-          />
+          <ProcessosToolbar csvHref={`/api/processos/csv?${new URLSearchParams(filtroQs)}`} />
           <Link
             href="/processos"
             title="Atualizar"
@@ -125,8 +111,9 @@ export default async function ProcessosPage({
 
       <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
         <div className="px-5 py-3 border-b border-gray-100 text-xs text-gray-500">
-          {processos.length} processo{processos.length !== 1 && "s"} e caso
-          {processos.length !== 1 && "s"}
+          {total.toLocaleString("pt-BR")} processo{total !== 1 && "s"} e caso
+          {total !== 1 && "s"}
+          {totalPaginas > 1 && ` · página ${pagina} de ${totalPaginas}`}
         </div>
         <table className="w-full text-sm">
           <thead>
@@ -183,6 +170,33 @@ export default async function ProcessosPage({
             )}
           </tbody>
         </table>
+        {totalPaginas > 1 && (
+          <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between text-sm">
+            {pagina > 1 ? (
+              <Link
+                href={urlPagina(pagina - 1)}
+                className="inline-flex items-center gap-1 text-gray-600 hover:text-[var(--brand)]"
+              >
+                <ChevronLeft size={15} /> Anterior
+              </Link>
+            ) : (
+              <span />
+            )}
+            <span className="text-xs text-gray-500">
+              Página {pagina} de {totalPaginas}
+            </span>
+            {pagina < totalPaginas ? (
+              <Link
+                href={urlPagina(pagina + 1)}
+                className="inline-flex items-center gap-1 text-gray-600 hover:text-[var(--brand)]"
+              >
+                Próxima <ChevronRight size={15} />
+              </Link>
+            ) : (
+              <span />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

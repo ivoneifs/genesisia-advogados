@@ -30,6 +30,9 @@ export async function createDocumento(formData: FormData) {
   let arquivoTipo: string | null = null;
   let arquivoTam: number | null = null;
 
+  // Mesmo limite do next.config.ts (serverActions.bodySizeLimit).
+  if (arquivo instanceof File && arquivo.size > 20 * 1024 * 1024) return;
+
   if (arquivo instanceof File && arquivo.size > 0) {
     await mkdir(UPLOAD_DIR, { recursive: true });
     const buffer = Buffer.from(await arquivo.arrayBuffer());

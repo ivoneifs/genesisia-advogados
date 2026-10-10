@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getSession, requireEscritorioId } from "@/lib/session";
 import { parseInputDateTimeBR } from "@/lib/format";
+import { processoValido } from "@/lib/tenant";
 
 export async function createTarefa(formData: FormData) {
   const titulo = String(formData.get("titulo") ?? "").trim();
@@ -13,7 +14,10 @@ export async function createTarefa(formData: FormData) {
 
   const session = await getSession();
   const escritorioId = await requireEscritorioId();
-  const processoId = String(formData.get("processoId") ?? "") || null;
+  const processoId = await processoValido(
+    String(formData.get("processoId") ?? "") || null,
+    escritorioId
+  );
 
   await prisma.tarefa.create({
     data: {

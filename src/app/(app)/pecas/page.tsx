@@ -9,7 +9,13 @@ export default async function PecasPage() {
     prisma.processo.findMany({
       where: { escritorioId },
       orderBy: { numero: "asc" },
-      include: { cliente: true },
+      select: {
+        id: true,
+        numero: true,
+        vara: true,
+        tribunal: true,
+        parteContraria: true,
+      },
     }),
     prisma.advogado.findMany({
       where: { escritorioId, ativo: true },

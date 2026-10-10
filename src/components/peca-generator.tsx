@@ -9,7 +9,10 @@ import { assinarModelo } from "@/lib/advogados";
 import Link from "next/link";
 import type { Cliente, Processo } from "@prisma/client";
 
-type ProcessoComCliente = Processo & { cliente: Cliente };
+type ProcessoResumo = Pick<
+  Processo,
+  "id" | "numero" | "vara" | "tribunal" | "parteContraria"
+>;
 
 const SUGESTOES_IA = [
   "Notificação de rescisão contratual por inadimplência",
@@ -23,7 +26,7 @@ export default function PecaGenerator({
   advogados,
 }: {
   clientes: Cliente[];
-  processos: ProcessoComCliente[];
+  processos: ProcessoResumo[];
   advogados: { id: string; nome: string; oab: string; uf: string; email: string | null }[];
 }) {
   const [advogadoId, setAdvogadoId] = useState(advogados[0]?.id ?? "");
