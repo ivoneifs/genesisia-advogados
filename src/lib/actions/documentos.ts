@@ -6,6 +6,7 @@ import { mkdir, writeFile, unlink } from "node:fs/promises";
 import path from "node:path";
 import { prisma } from "@/lib/db";
 import { requireEscritorioId } from "@/lib/session";
+import { clienteValido, processoValido } from "@/lib/tenant";
 
 const UPLOAD_DIR = path.join(process.cwd(), "uploads");
 
@@ -14,6 +15,14 @@ export async function createDocumento(formData: FormData) {
   if (!titulo) return;
 
   const escritorioId = await requireEscritorioId();
+  const processoOk = await processoValido(
+    String(formData.get("processoId") ?? "") || null,
+    escritorioId
+  );
+  const clienteOk = await clienteValido(
+    String(formData.get("clienteId") ?? "") || null,
+    escritorioId
+  );
   const arquivo = formData.get("arquivo");
   const id = randomUUID();
 
@@ -37,8 +46,8 @@ export async function createDocumento(formData: FormData) {
       escritorioId,
       tipo: String(formData.get("tipo") ?? "OUTRO"),
       observacoes: String(formData.get("observacoes") ?? "") || null,
-      processoId: String(formData.get("processoId") ?? "") || null,
-      clienteId: String(formData.get("clienteId") ?? "") || null,
+      processoId: processoOk,
+      clienteId: clienteOk,
       arquivoNome,
       arquivoTipo,
       arquivoTam,

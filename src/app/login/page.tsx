@@ -175,11 +175,6 @@ export default function LoginPage() {
               </>
             )}
           </p>
-
-          <div className="rounded-lg border border-dashed border-gray-300 px-3 py-2.5 text-xs text-gray-500">
-            <span className="font-medium text-gray-600">Demo:</span>{" "}
-            demo@genesisia.com.br / demo123
-          </div>
         </div>
       </div>
     </div>

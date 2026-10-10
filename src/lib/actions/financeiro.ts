@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireEscritorioId } from "@/lib/session";
+import { clienteValido, processoValido } from "@/lib/tenant";
 
 export async function createFinanceiro(formData: FormData) {
   const descricao = String(formData.get("descricao") ?? "").trim();
@@ -12,6 +13,14 @@ export async function createFinanceiro(formData: FormData) {
   if (!descricao || !vencimento || !Number.isFinite(valor)) return;
 
   const escritorioId = await requireEscritorioId();
+  const clienteOk = await clienteValido(
+    String(formData.get("clienteId") ?? "") || null,
+    escritorioId
+  );
+  const processoOk = await processoValido(
+    String(formData.get("processoId") ?? "") || null,
+    escritorioId
+  );
 
   await prisma.financeiro.create({
     data: {
@@ -21,8 +30,8 @@ export async function createFinanceiro(formData: FormData) {
       vencimento: new Date(vencimento),
       tipo: String(formData.get("tipo") ?? "RECEITA"),
       status: String(formData.get("status") ?? "PENDENTE"),
-      clienteId: String(formData.get("clienteId") ?? "") || null,
-      processoId: String(formData.get("processoId") ?? "") || null,
+      clienteId: clienteOk,
+      processoId: processoOk,
     },
   });
 

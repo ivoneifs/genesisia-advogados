@@ -14,10 +14,15 @@ export async function GET(
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  // Exige escritório: sem isso o filtro colapsaria para `{ id }` e permitiria
+  // baixar documento de qualquer tenant (IDOR).
+  if (!session.escritorioId) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
 
   const { id } = await params;
   const documento = await prisma.documento.findFirst({
-    where: { id, escritorioId: session.escritorioId ?? undefined },
+    where: { id, escritorioId: session.escritorioId },
   });
   if (!documento || !documento.arquivoNome) {
     return NextResponse.json({ error: "not found" }, { status: 404 });

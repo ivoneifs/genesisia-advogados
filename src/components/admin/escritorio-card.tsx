@@ -3,7 +3,7 @@
 import { useState } from "react";
 import {
   updateEscritorioNome,
-  toggleEscritorioAtivo,
+  updateEscritorioPlano,
   deleteEscritorio,
   toggleUserAtivo,
   deleteUser,
@@ -14,9 +14,8 @@ import {
   Pencil,
   Check,
   Trash2,
-  ToggleLeft,
-  ToggleRight,
   Building2,
+  SlidersHorizontal,
 } from "lucide-react";
 
 type Usuario = {
@@ -27,23 +26,46 @@ type Usuario = {
   ativo: boolean;
 };
 
+type Escritorio = {
+  id: string;
+  nome: string;
+  ativo: boolean;
+  plano: string;
+  status: string;
+  trialExpira: string | null;
+  createdAt: Date;
+  users: Usuario[];
+};
+
+const PLANOS = ["TRIAL", "BASICO", "PRO"];
+const STATUSES = ["TRIAL", "ATIVO", "SUSPENSO"];
+
+function statusVisual(status: string, ativo: boolean) {
+  if (!ativo || status === "SUSPENSO")
+    return { txt: "Suspenso", cls: "bg-red-100 text-red-700" };
+  if (status === "TRIAL")
+    return { txt: "Trial", cls: "bg-amber-100 text-amber-700" };
+  return { txt: "Ativo", cls: "bg-emerald-100 text-emerald-700" };
+}
+
 export default function EscritorioCard({
   escritorio,
 }: {
-  escritorio: {
-    id: string;
-    nome: string;
-    ativo: boolean;
-    createdAt: Date;
-    users: Usuario[];
-  };
+  escritorio: Escritorio;
 }) {
   const [editando, setEditando] = useState(false);
+  const [planoOpen, setPlanoOpen] = useState(false);
+  const sv = statusVisual(escritorio.status, escritorio.ativo);
+  const trialInput = escritorio.trialExpira
+    ? escritorio.trialExpira.slice(0, 10)
+    : "";
 
   return (
     <div
       className={`rounded-xl border bg-white ${
-        escritorio.ativo ? "border-gray-200" : "border-red-200 bg-red-50/30"
+        escritorio.ativo && escritorio.status !== "SUSPENSO"
+          ? "border-gray-200"
+          : "border-red-200 bg-red-50/30"
       }`}
     >
       <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
@@ -79,7 +101,7 @@ export default function EscritorioCard({
               <button
                 type="button"
                 onClick={() => setEditando(true)}
-                title="Editar título"
+                title="Editar nome"
                 className="h-6 w-6 flex items-center justify-center rounded text-gray-400 hover:bg-gray-100 hover:text-gray-700 shrink-0"
               >
                 <Pencil size={12} />
@@ -89,25 +111,20 @@ export default function EscritorioCard({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <form action={toggleEscritorioAtivo}>
-            <input type="hidden" name="id" value={escritorio.id} />
-            <input type="hidden" name="ativo" value={String(escritorio.ativo)} />
-            <button
-              type="submit"
-              className={`flex items-center gap-1.5 text-xs font-medium rounded-full px-2.5 py-1 ${
-                escritorio.ativo
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "bg-red-100 text-red-700"
-              }`}
-            >
-              {escritorio.ativo ? (
-                <ToggleRight size={14} />
-              ) : (
-                <ToggleLeft size={14} />
-              )}
-              {escritorio.ativo ? "Ativo" : "Inativo"}
-            </button>
-          </form>
+          <span className="text-xs font-medium text-gray-500">
+            {escritorio.plano}
+          </span>
+          <span className={`text-xs font-medium rounded-full px-2.5 py-1 ${sv.cls}`}>
+            {sv.txt}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPlanoOpen((v) => !v)}
+            title="Plano e status"
+            className="h-7 w-7 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+          >
+            <SlidersHorizontal size={13} />
+          </button>
           <form action={deleteEscritorio}>
             <input type="hidden" name="id" value={escritorio.id} />
             <button
@@ -120,6 +137,67 @@ export default function EscritorioCard({
           </form>
         </div>
       </div>
+
+      {planoOpen && (
+        <form
+          action={async (formData) => {
+            await updateEscritorioPlano(formData);
+            setPlanoOpen(false);
+          }}
+          className="px-5 py-3 bg-gray-50 border-b border-gray-100 flex flex-wrap items-end gap-3"
+        >
+          <input type="hidden" name="id" value={escritorio.id} />
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">
+              Plano
+            </label>
+            <select
+              name="plano"
+              defaultValue={escritorio.plano}
+              className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
+            >
+              {PLANOS.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">
+              Status
+            </label>
+            <select
+              name="status"
+              defaultValue={escritorio.status}
+              className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
+            >
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">
+              Trial expira em
+            </label>
+            <input
+              type="date"
+              name="trialExpira"
+              defaultValue={trialInput}
+              className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
+            />
+          </div>
+          <button
+            type="submit"
+            className="rounded-lg bg-[var(--brand)] hover:bg-[var(--brand-dark)] text-white text-xs font-medium px-3 py-2"
+          >
+            Salvar
+          </button>
+        </form>
+      )}
 
       <ul className="divide-y divide-gray-100">
         {escritorio.users.map((u) => (

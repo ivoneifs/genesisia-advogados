@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getSession, requireEscritorioId } from "@/lib/session";
+import { processoValido } from "@/lib/tenant";
 import { runWorkflows } from "@/lib/workflows";
 
 export async function createPrazo(formData: FormData) {
@@ -13,13 +14,17 @@ export async function createPrazo(formData: FormData) {
 
   const session = await getSession();
   const escritorioId = await requireEscritorioId();
+
+  const processoOk = await processoValido(processoId, escritorioId);
+  if (!processoOk) return;
+
   const prioridade = String(formData.get("prioridade") ?? "NORMAL");
   const vencimento = new Date(dataVencimento);
 
   await prisma.prazo.create({
     data: {
       titulo,
-      processoId,
+      processoId: processoOk,
       escritorioId,
       dataVencimento: vencimento,
       descricao: String(formData.get("descricao") ?? "") || null,

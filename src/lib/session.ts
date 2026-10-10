@@ -1,11 +1,9 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { sessionSecret as secret } from "@/lib/secret";
 
 const COOKIE_NAME = "genesis_session";
-const secret = new TextEncoder().encode(
-  process.env.SESSION_SECRET ?? "fallback-dev-secret"
-);
 
 export type SessionPayload = {
   userId: string;

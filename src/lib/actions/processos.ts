@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession, requireEscritorioId } from "@/lib/session";
+import { clienteValido } from "@/lib/tenant";
 import { runWorkflows } from "@/lib/workflows";
 
 function parseValor(v: FormDataEntryValue | null) {
@@ -20,10 +21,13 @@ export async function createProcesso(formData: FormData) {
   const session = await getSession();
   const escritorioId = await requireEscritorioId();
 
+  const clienteOk = await clienteValido(clienteId, escritorioId);
+  if (!clienteOk) return;
+
   const processo = await prisma.processo.create({
     data: {
       numero,
-      clienteId,
+      clienteId: clienteOk,
       escritorioId,
       area: String(formData.get("area") ?? "") || null,
       status: String(formData.get("status") ?? "ATIVO"),
@@ -47,11 +51,14 @@ export async function updateProcesso(id: string, formData: FormData) {
 
   const escritorioId = await requireEscritorioId();
 
+  const clienteOk = await clienteValido(clienteId, escritorioId);
+  if (!clienteOk) return;
+
   await prisma.processo.updateMany({
     where: { id, escritorioId },
     data: {
       numero,
-      clienteId,
+      clienteId: clienteOk,
       area: String(formData.get("area") ?? "") || null,
       status: String(formData.get("status") ?? "ATIVO"),
       tribunal: String(formData.get("tribunal") ?? "") || null,

@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
+import { sessionSecret as secret } from "@/lib/secret";
 
 const COOKIE_NAME = "genesis_session";
-const secret = new TextEncoder().encode(
-  process.env.SESSION_SECRET ?? "fallback-dev-secret"
-);
 
 const PUBLIC_PATHS = ["/login", "/api/auth/login"];
 

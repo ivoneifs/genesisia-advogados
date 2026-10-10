@@ -14,4 +14,6 @@ RUN npm run build
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run start"]
+# Migra o banco e, se SEED_ADMIN_PASSWORD estiver definido, garante o superadmin
+# (idempotente: não altera um admin que já existe).
+CMD ["sh", "-c", "npx prisma migrate deploy && if [ -n \"$SEED_ADMIN_PASSWORD\" ]; then node prisma/seed.mjs; fi && npm run start"]
