@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
+import { rateLimit } from "@/lib/rate-limit";
 import { pecaPorId, ESTRUTURA } from "@/lib/biblioteca-pecas";
+import { parseAdvogados, formatAdvogado } from "@/lib/advogados";
+import { formatCurrency } from "@/lib/format";
 
 export const runtime = "nodejs";
+export const maxDuration = 180;
 
 const MODEL = process.env.OPENAI_MODEL || "gpt-4o";
 
@@ -13,6 +17,32 @@ function getClient() {
   if (!apiKey) return null;
   return new OpenAI({ apiKey });
 }
+
+// Padrão de redação e formatação das minutas. As convenções de formatação
+// (títulos em maiúsculas, parágrafos numerados, alíneas) são as que o
+// exportador .docx (src/lib/exportar-docx.ts) reconhece.
+const PADRAO_REDACAO = `Você é um advogado sênior brasileiro, com mais de 20 anos de prática forense e consultiva, que redige minutas de peças e documentos jurídicos para outros advogados revisarem e assinarem, no sistema Genesis IA.
+
+QUALIDADE TÉCNICA
+- Redija em português do Brasil, com linguagem jurídica formal, técnica, clara e persuasiva, no padrão de um escritório de excelência. Evite prolixidade, repetições e chavões vazios.
+- Siga o rito e a estrutura próprios da peça pedida, com todos os requisitos legais de admissibilidade (ex.: CPC, art. 319, para a petição inicial; tempestividade, preparo e cabimento para recursos; CLT, art. 840, § 1º, para a reclamação trabalhista).
+- Desenvolva a fundamentação jurídica em tópicos, ligando os fatos às normas aplicáveis (Constituição, códigos, leis especiais) e aos princípios pertinentes. Antecipe e rebata as teses contrárias mais prováveis.
+- Formule pedidos certos, determinados e completos (CPC, arts. 322 e 324), incluindo, quando cabíveis: tutela de urgência, citação/intimação, procedência, condenação em custas e honorários, produção de provas, gratuidade da justiça, prioridade de tramitação e indicação do valor da causa.
+
+FIDELIDADE (REGRA ABSOLUTA)
+- Nunca invente fatos, nomes, números de documentos, de OAB, de processos, datas ou valores. Use apenas os dados fornecidos; o que faltar fica entre colchetes, ex.: [CPF], [data do contrato], [valor].
+- Cite somente dispositivos legais e súmulas de cuja existência e conteúdo você tenha certeza. Não cite número de processo, relator ou data de julgado específico; onde um precedente fortaleceria a tese, escreva: [inserir precedente do STJ/TJ sobre o tema].
+
+FORMATAÇÃO (TEXTO PURO, SEM MARKDOWN)
+- Não use asteriscos, cerquilhas nem outra marcação Markdown.
+- Primeira linha: o endereçamento, em letras maiúsculas (ex.: EXCELENTÍSSIMO(A) SENHOR(A) DOUTOR(A) JUIZ(A) DE DIREITO DA ___ VARA CÍVEL DA COMARCA DE [COMARCA]).
+- Títulos de seção em linha própria, em letras maiúsculas e numerados em romanos (ex.: I – DOS FATOS; II – DO DIREITO; III – DOS PEDIDOS).
+- Parágrafos de desenvolvimento numerados sequencialmente (1., 2., 3., ...).
+- Pedidos e requerimentos em alíneas: a), b), c), ...
+- Uma linha em branco entre parágrafos.
+- Encerramento: "Termos em que, pede deferimento.", local e data, e assinatura com nome do advogado e OAB.
+
+Retorne apenas o texto da minuta, sem comentários antes ou depois.`;
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -31,7 +61,18 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Cada geração custa tokens: limita por usuário.
+  const rl = rateLimit(`ia-pecas:${session.userId}`, 10, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: `Muitas gerações seguidas. Aguarde ${rl.retryAfterSec}s.` },
+      { status: 429 }
+    );
+  }
+
   const body = await req.json().catch(() => null);
+  const clienteId = String(body?.clienteId ?? "") || null;
+  const processoId = String(body?.processoId ?? "") || null;
   const peca = body?.pecaId ? pecaPorId(String(body.pecaId)) : undefined;
   const detalhes = String(body?.detalhes ?? "").trim().slice(0, 8000);
   // Peça da biblioteca: a instrução é montada aqui, a partir do catálogo.
@@ -44,9 +85,7 @@ export async function POST(req: NextRequest) {
           ? `Fatos e detalhes do caso informados pelo advogado:\n${detalhes}`
           : "O advogado não informou os fatos: use placeholders entre colchetes para fatos, datas e valores.",
       ].join("\n\n")
-    : String(body?.instrucao ?? "").trim();
-  const clienteId = String(body?.clienteId ?? "") || null;
-  const processoId = String(body?.processoId ?? "") || null;
+    : String(body?.instrucao ?? "").trim().slice(0, 8000);
 
   if (!instrucao) {
     return NextResponse.json({ error: "Descreva o que você precisa." }, { status: 400 });
@@ -54,7 +93,7 @@ export async function POST(req: NextRequest) {
 
   const escritorioId = session.escritorioId;
 
-  const [cliente, processo] = await Promise.all([
+  const [cliente, processo, escritorio] = await Promise.all([
     clienteId
       ? prisma.cliente.findFirst({ where: { id: clienteId, escritorioId } })
       : null,
@@ -64,21 +103,40 @@ export async function POST(req: NextRequest) {
           include: { cliente: true },
         })
       : null,
+    prisma.escritorio.findUnique({
+      where: { id: escritorioId },
+      select: { nome: true },
+    }),
   ]);
 
+  const advogadosProcesso = processo ? parseAdvogados(processo.advogados) : [];
   const contexto = [
+    escritorio ? `Escritório: ${escritorio.nome}.` : "",
+    `Advogado(a) que assinará: ${session.name} (OAB: [nº OAB/UF]).`,
     cliente
-      ? `Cliente: ${cliente.nome} (${cliente.tipo})${
-          cliente.documento ? `, documento ${cliente.documento}` : ""
-        }${cliente.endereco ? `, endereço ${cliente.endereco}` : ""}.`
+      ? `Cliente: ${cliente.nome} (${cliente.tipo === "PJ" ? "pessoa jurídica" : "pessoa física"})${
+          cliente.documento ? `, ${cliente.tipo === "PJ" ? "CNPJ" : "CPF"} ${cliente.documento}` : ""
+        }${cliente.endereco ? `, endereço: ${cliente.endereco}` : ""}${
+          cliente.email ? `, e-mail: ${cliente.email}` : ""
+        }${cliente.telefone ? `, telefone: ${cliente.telefone}` : ""}.`
       : "",
     processo
-      ? `Processo nº ${processo.numero}, cliente ${processo.cliente.nome}, área ${
-          processo.area ?? "não informada"
-        }, tribunal ${processo.tribunal ?? "—"}, vara ${
-          processo.vara ?? "—"
-        }, parte contrária ${processo.parteContraria ?? "—"}.`
+      ? [
+          `Processo nº ${processo.numero}`,
+          `cliente ${processo.cliente.nome}`,
+          processo.area ? `classe/área: ${processo.area}` : "",
+          processo.tribunal ? `tribunal: ${processo.tribunal}` : "",
+          processo.vara ? `órgão/vara: ${processo.vara}` : "",
+          processo.parteContraria ? `parte contrária: ${processo.parteContraria}` : "",
+          processo.valorCausa != null ? `valor da causa: ${formatCurrency(processo.valorCausa)}` : "",
+          advogadosProcesso.length
+            ? `advogados no processo: ${advogadosProcesso.map(formatAdvogado).join("; ")}`
+            : "",
+        ]
+          .filter(Boolean)
+          .join(", ") + "."
       : "",
+    processo?.descricao ? `Observações do processo:\n${processo.descricao}` : "",
   ]
     .filter(Boolean)
     .join("\n");
@@ -89,24 +147,28 @@ export async function POST(req: NextRequest) {
     year: "numeric",
   });
 
-  const system = `Você é um assistente jurídico que redige minutas de peças e documentos para advogados brasileiros, no sistema Genesis IA.
-Escreva em português do Brasil, em linguagem jurídica formal e objetiva, seguindo as convenções usuais de peças processuais e instrumentos jurídicos brasileiros.
-Use placeholders entre colchetes (ex: [OAB], [valor]) para qualquer dado que não tenha sido fornecido — nunca invente números de OAB, valores, datas ou nomes que não foram passados.
-Retorne apenas o texto da minuta, pronto para revisão, sem comentários introdutórios ou explicações antes ou depois.
-Data de hoje, se necessário: ${today}.
-${contexto ? `\nDados disponíveis para usar no documento:\n${contexto}` : ""}`;
+  const system = `${PADRAO_REDACAO}
+
+Data de hoje: ${today}.
+
+Dados do cadastro para usar no documento:
+${contexto}`;
 
   try {
     const response = await client.chat.completions.create({
       model: MODEL,
-      max_tokens: peca ? 6000 : 3000,
+      temperature: 0.3,
+      max_tokens: peca ? 8000 : 4000,
       messages: [
         { role: "system", content: system },
         { role: "user", content: instrucao },
       ],
     });
 
-    const texto = response.choices[0]?.message?.content ?? "";
+    const texto = (response.choices[0]?.message?.content ?? "")
+      .replace(/\*\*(.+?)\*\*/g, "$1")
+      .replace(/^#+\s*/gm, "")
+      .trim();
     return NextResponse.json({ texto });
   } catch (error) {
     if (error instanceof OpenAI.AuthenticationError) {
