@@ -2,20 +2,19 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { exigirPagina } from "@/lib/usuario";
 import { formatDateTimeBR } from "@/lib/format";
-import {
-  salvarConfigWhatsapp,
-  salvarWhatsappUsuarios,
-  usarNumeroCentral,
-} from "@/lib/actions/whatsapp";
+import { salvarConfigWhatsapp, salvarWhatsappUsuarios } from "@/lib/actions/whatsapp";
 import {
   INSTANCIA_CENTRAL,
   estadoInstancia,
   evolutionConfigurada,
   formatarWhatsapp,
+  nomeInstancia,
   normalizarWhatsapp,
+  perfilInstancia,
   type EstadoConexao,
+  type PerfilConectado,
 } from "@/lib/whatsapp";
-import { ConectarNumero, EnviarTeste } from "@/components/whatsapp-conexao";
+import { ConexaoWhatsapp, EnviarTeste } from "@/components/whatsapp-conexao";
 import {
   MessageCircle,
   CheckCircle2,
@@ -91,13 +90,28 @@ export default async function WhatsappPage() {
   ]);
 
   const configurada = evolutionConfigurada();
-  const instancia = cfg?.instancia || INSTANCIA_CENTRAL;
-  let estado: EstadoConexao | "erro" = "close";
-  if (configurada && instancia) {
-    estado = await estadoInstancia(instancia).catch(() => "erro" as const);
+  const propria = nomeInstancia(escritorioId);
+  let estadoProprio: EstadoConexao | "erro" = "inexistente";
+  let estadoCentral: EstadoConexao | "erro" = "close";
+  let perfil: PerfilConectado | null = null;
+  if (configurada) {
+    estadoProprio = await estadoInstancia(propria).catch(() => "erro" as const);
+    if (estadoProprio === "open") perfil = await perfilInstancia(propria).catch(() => null);
+    if (INSTANCIA_CENTRAL) {
+      estadoCentral = await estadoInstancia(INSTANCIA_CENTRAL).catch(() => "erro" as const);
+    }
   }
-  const conectado = estado === "open";
-  const proprio = Boolean(cfg?.instancia);
+  const proprioConectado = estadoProprio === "open";
+  // Conectou com a tela fechada: passa a usar o número próprio nos alertas.
+  if (proprioConectado && cfg?.instancia !== propria) {
+    await prisma.configWhatsapp.upsert({
+      where: { escritorioId },
+      create: { escritorioId, instancia: propria },
+      update: { instancia: propria },
+    });
+  }
+  const centralConectado = estadoCentral === "open";
+  const conectado = proprioConectado || centralConectado;
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -120,16 +134,16 @@ export default async function WhatsappPage() {
       )}
 
       {/* Conexão */}
-      <section className={`${CARD} p-5 space-y-4`}>
+      <section className={`${CARD} p-5 space-y-5`}>
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
-            <h2 className="font-semibold text-gray-900">Número que envia</h2>
+            <h2 className="font-semibold text-gray-900">WhatsApp do escritório</h2>
             <p className="text-xs text-gray-500 mt-0.5">
-              {proprio
-                ? "Número próprio do escritório."
-                : INSTANCIA_CENTRAL
-                  ? "Número central do Genesis IA. Você pode conectar o número do escritório."
-                  : "Conecte o número de WhatsApp do escritório."}
+              {proprioConectado
+                ? "Os alertas saem do número do escritório."
+                : centralConectado
+                  ? "Enquanto o número do escritório não for conectado, os alertas saem pelo número central do Genesis IA."
+                  : "Conecte o número do escritório para enviar os alertas."}
             </p>
           </div>
           <span
@@ -140,27 +154,19 @@ export default async function WhatsappPage() {
             }`}
           >
             {conectado ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
-            {conectado ? "Conectado" : estado === "connecting" ? "Aguardando leitura do QR" : "Desconectado"}
+            {proprioConectado ? "Número próprio" : centralConectado ? "Número central" : "Sem número conectado"}
           </span>
         </div>
         {configurada && (
-          <div className="flex flex-wrap items-start gap-3">
-            <ConectarNumero conectado={conectado && proprio} />
-            {proprio && INSTANCIA_CENTRAL && (
-              <form action={usarNumeroCentral}>
-                <button
-                  type="submit"
-                  className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
-                >
-                  Desconectar e usar o número central
-                </button>
-              </form>
-            )}
-          </div>
+          <ConexaoWhatsapp
+            conectado={proprioConectado}
+            aguardando={estadoProprio === "connecting"}
+            perfil={perfil}
+            numeroSalvo={cfg?.numero ?? null}
+          />
         )}
-        {conectado && (
+        {!proprioConectado && centralConectado && (
           <div className="pt-4 border-t border-gray-100">
-            <p className="text-sm font-medium text-gray-900 mb-2">Enviar mensagem de teste</p>
             <EnviarTeste />
           </div>
         )}

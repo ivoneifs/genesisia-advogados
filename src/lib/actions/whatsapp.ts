@@ -5,11 +5,16 @@ import { prisma } from "@/lib/db";
 import { exigir } from "@/lib/usuario";
 import {
   INSTANCIA_CENTRAL,
-  desconectarInstancia,
+  apagarInstancia,
+  codigosInstancia,
+  criarInstancia,
   enviarTexto,
+  estadoInstancia,
   nomeInstancia,
   normalizarWhatsapp,
-  qrCodeInstancia,
+  perfilInstancia,
+  type CodigosConexao,
+  type PerfilConectado,
 } from "@/lib/whatsapp";
 
 const CAMINHO = "/whatsapp";
@@ -72,38 +77,86 @@ export async function salvarWhatsappUsuarios(formData: FormData) {
   revalidatePath(CAMINHO);
 }
 
-/** Cria/reconecta a instância própria do escritório e devolve o QR code. */
-export async function conectarNumeroProprio(
-  _prev: WhatsappState,
-  _formData: FormData
-): Promise<WhatsappState> {
+export type ConexaoState =
+  | { etapa: "aguardando"; numero: string; codigos: CodigosConexao }
+  | { etapa: "erro"; error: string }
+  | undefined;
+
+/**
+ * Conecta o número do escritório: cria (ou recria, se o número mudou) a
+ * instância na Evolution e devolve o QR code e o código de pareamento.
+ */
+export async function iniciarConexao(
+  _prev: ConexaoState,
+  formData: FormData
+): Promise<ConexaoState> {
   const { escritorioId } = await exigir("gerenciar");
+  const numero = normalizarWhatsapp(String(formData.get("numero") ?? ""));
+  if (!numero) {
+    return { etapa: "erro", error: "Informe o WhatsApp do escritório com DDD, ex.: (11) 98765-4321." };
+  }
   const instancia = nomeInstancia(escritorioId);
   try {
-    const qr = await qrCodeInstancia(instancia);
+    const cfg = await prisma.configWhatsapp.findUnique({ where: { escritorioId } });
+    const estado = await estadoInstancia(instancia);
+    let codigos: CodigosConexao;
+    if (estado !== "inexistente" && cfg?.numero === numero && estado !== "open") {
+      codigos = await codigosInstancia(instancia);
+    } else {
+      // Número novo (ou instância antiga): começa do zero para gerar o código de pareamento.
+      if (estado !== "inexistente") await apagarInstancia(instancia);
+      codigos = await criarInstancia(instancia, numero);
+    }
+    // A instância só passa a enviar alertas depois de conectada (ver statusConexao);
+    // até lá os alertas seguem pelo número central.
     await prisma.configWhatsapp.upsert({
       where: { escritorioId },
-      create: { escritorioId, instancia },
-      update: { instancia },
+      create: { escritorioId, numero },
+      update: { instancia: null, numero },
     });
-    revalidatePath(CAMINHO);
-    return qr ? { qr } : { success: "Número conectado." };
+    return { etapa: "aguardando", numero, codigos };
   } catch (e) {
-    return erro(e);
+    return { etapa: "erro", error: erro(e).error };
   }
 }
 
-export async function usarNumeroCentral(formData: FormData) {
-  void formData;
+export type StatusConexao = {
+  estado: "open" | "connecting" | "close" | "inexistente" | "erro";
+  codigos?: CodigosConexao;
+  perfil?: PerfilConectado | null;
+};
+
+/** Consultado pela tela a cada poucos segundos enquanto aguarda a leitura do QR. */
+export async function statusConexao(atualizarCodigos: boolean): Promise<StatusConexao> {
   const { escritorioId } = await exigir("gerenciar");
-  const cfg = await prisma.configWhatsapp.findUnique({ where: { escritorioId } });
-  if (cfg?.instancia) {
-    await desconectarInstancia(cfg.instancia).catch(() => {});
+  const instancia = nomeInstancia(escritorioId);
+  try {
+    const estado = await estadoInstancia(instancia);
+    if (estado === "open") {
+      await prisma.configWhatsapp.upsert({
+        where: { escritorioId },
+        create: { escritorioId, instancia },
+        update: { instancia },
+      });
+      return { estado, perfil: await perfilInstancia(instancia).catch(() => null) };
+    }
+    if (estado === "connecting" && atualizarCodigos) {
+      return { estado, codigos: await codigosInstancia(instancia) };
+    }
+    return { estado };
+  } catch {
+    return { estado: "erro" };
   }
+}
+
+/** Desconecta e remove o número do escritório (volta ao número central, se houver). */
+export async function desconectarNumero() {
+  const { escritorioId } = await exigir("gerenciar");
+  await apagarInstancia(nomeInstancia(escritorioId)).catch(() => {});
   await prisma.configWhatsapp.upsert({
     where: { escritorioId },
-    create: { escritorioId, instancia: null },
-    update: { instancia: null },
+    create: { escritorioId },
+    update: { instancia: null, numero: null },
   });
   revalidatePath(CAMINHO);
 }

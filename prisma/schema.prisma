@@ -267,6 +267,7 @@ model ConfigWhatsapp {
   id            String   @id @default(cuid())
   ativo         Boolean  @default(false)
   instancia     String?  // instância própria na Evolution; vazia = número central
+  numero        String?  // WhatsApp do escritório conectado à instância própria
   agenda        Boolean  @default(true)
   prazos        Boolean  @default(true)
   publicacoes   Boolean  @default(true)

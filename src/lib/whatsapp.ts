@@ -95,23 +95,49 @@ export async function estadoInstancia(instancia: string): Promise<EstadoConexao>
   }
 }
 
-/** Cria a instância (se preciso) e devolve o QR code em data URL para conectar. */
-export async function qrCodeInstancia(instancia: string): Promise<string | null> {
-  const estado = await estadoInstancia(instancia);
-  if (estado === "inexistente") {
-    const r = await chamar<{ qrcode?: { base64?: string } }>("POST", "/instance/create", {
-      instanceName: instancia,
-      integration: "WHATSAPP-BAILEYS",
-      qrcode: true,
-    });
-    return r?.qrcode?.base64 ?? null;
-  }
-  if (estado === "open") return null;
-  const r = await chamar<{ base64?: string }>(
+export type CodigosConexao = { qr: string | null; pairingCode: string | null };
+
+function codigos(r: { base64?: string; pairingCode?: string | null } | undefined): CodigosConexao {
+  return { qr: r?.base64 ?? null, pairingCode: r?.pairingCode || null };
+}
+
+/** Cria a instância já vinculada ao número (habilita o código de pareamento). */
+export async function criarInstancia(instancia: string, numero: string): Promise<CodigosConexao> {
+  const r = await chamar<{ qrcode?: { base64?: string; pairingCode?: string | null } }>(
+    "POST",
+    "/instance/create",
+    { instanceName: instancia, integration: "WHATSAPP-BAILEYS", qrcode: true, number: numero }
+  );
+  return codigos(r?.qrcode);
+}
+
+/** QR code e código de pareamento atuais de uma instância aguardando conexão. */
+export async function codigosInstancia(instancia: string): Promise<CodigosConexao> {
+  const r = await chamar<{ base64?: string; pairingCode?: string | null }>(
     "GET",
     `/instance/connect/${encodeURIComponent(instancia)}`
   );
-  return r?.base64 ?? null;
+  return codigos(r);
+}
+
+export type PerfilConectado = { nome: string | null; numero: string | null; foto: string | null };
+
+export async function perfilInstancia(instancia: string): Promise<PerfilConectado | null> {
+  const r = await chamar<
+    { profileName?: string | null; ownerJid?: string | null; profilePicUrl?: string | null }[]
+  >("GET", `/instance/fetchInstances?instanceName=${encodeURIComponent(instancia)}`);
+  const x = Array.isArray(r) ? r[0] : null;
+  if (!x) return null;
+  return {
+    nome: x.profileName ?? null,
+    numero: x.ownerJid ? x.ownerJid.split("@")[0] : null,
+    foto: x.profilePicUrl ?? null,
+  };
+}
+
+export async function apagarInstancia(instancia: string) {
+  await chamar("DELETE", `/instance/logout/${encodeURIComponent(instancia)}`).catch(() => {});
+  await chamar("DELETE", `/instance/delete/${encodeURIComponent(instancia)}`);
 }
 
 export async function desconectarInstancia(instancia: string) {
