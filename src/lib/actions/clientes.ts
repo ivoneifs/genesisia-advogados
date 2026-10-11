@@ -21,6 +21,7 @@ export async function createCliente(formData: FormData) {
       telefone: String(formData.get("telefone") ?? "") || null,
       endereco: String(formData.get("endereco") ?? "") || null,
       observacoes: String(formData.get("observacoes") ?? "") || null,
+      receberWhatsapp: formData.get("receberWhatsapp") === "on",
     },
   });
 
@@ -44,6 +45,7 @@ export async function updateCliente(id: string, formData: FormData) {
       telefone: String(formData.get("telefone") ?? "") || null,
       endereco: String(formData.get("endereco") ?? "") || null,
       observacoes: String(formData.get("observacoes") ?? "") || null,
+      receberWhatsapp: formData.get("receberWhatsapp") === "on",
     },
   });
 

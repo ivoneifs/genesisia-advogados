@@ -22,6 +22,7 @@ import {
   Bot,
   UserRound,
   Telescope,
+  MessageSquareText,
 } from "lucide-react";
 
 const NAV = [
@@ -42,6 +43,7 @@ const NAV = [
   { href: "/documentos", label: "Documentos", icon: Paperclip },
   { href: "/indicadores", label: "Indicadores", icon: BarChart3 },
   { href: "/alertas", label: "Alertas", icon: Bell },
+  { href: "/whatsapp", label: "WhatsApp", icon: MessageSquareText },
 ];
 
 export default function Sidebar() {
