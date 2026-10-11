@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { versaoApp } from "@/lib/versao";
+import VigiaVersao from "@/components/vigia-versao";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,7 +15,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Genesis IA | Gestão Jurídica Inteligente",
+  title: {
+    default: "Genesis IA | Gestão Jurídica Inteligente",
+    template: "%s · Genesis IA",
+  },
   description:
     "Genesis IA: gestão de processos, prazos, clientes, agenda e financeiro para escritórios de advocacia.",
 };
@@ -24,7 +29,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="pt-BR"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <head>
+        <meta name="app-versao" content={versaoApp()} />
+      </head>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <VigiaVersao />
+      </body>
     </html>
   );
 }

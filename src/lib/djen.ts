@@ -67,20 +67,38 @@ function capitalizar(s: string) {
     .replace(/ (De|Da|Do|Das|Dos|E|Em|Por|Para) /g, (m) => m.toLowerCase());
 }
 
+export type OpcoesBusca = {
+  /** Máximo de páginas de 100 comunicações (padrão: 15). */
+  maxPaginas?: number;
+  /** Ao bater no limite do DJEN, espera 1 minuto e continua (importação em segundo plano). */
+  esperarLimite?: boolean;
+  /** Chamado a cada página baixada. */
+  aoProgresso?: (baixadas: number, total: number) => void | Promise<void>;
+};
+
+const espera = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 export async function buscarProcessosPorOab(
   numeroOab: string,
-  uf: string
+  uf: string,
+  opcoes: OpcoesBusca = {}
 ): Promise<ResultadoDjen> {
+  const maxPaginas = opcoes.maxPaginas ?? MAX_PAGINAS;
   const itens: ComunicacaoApi[] = [];
   let incompleto = false;
 
-  for (let pagina = 1; pagina <= MAX_PAGINAS; pagina++) {
+  for (let pagina = 1; pagina <= maxPaginas; pagina++) {
     const url = `${API}?numeroOab=${encodeURIComponent(numeroOab)}&ufOab=${uf}&itensPorPagina=${POR_PAGINA}&pagina=${pagina}`;
     const res = await fetch(url, {
       headers: { Accept: "application/json" },
       cache: "no-store",
       signal: AbortSignal.timeout(30_000),
     });
+    if (res.status === 429 && opcoes.esperarLimite) {
+      await espera(65_000);
+      pagina--;
+      continue;
+    }
     if (res.status === 429) {
       if (pagina === 1) {
         throw new Error("O DJEN limitou as consultas. Aguarde 1 minuto e tente de novo.");
@@ -94,7 +112,10 @@ export async function buscarProcessosPorOab(
     const page = json.items ?? [];
     itens.push(...page);
     if (page.length < POR_PAGINA || itens.length >= (json.count ?? 0)) break;
-    if (pagina === MAX_PAGINAS) incompleto = true;
+    await opcoes.aoProgresso?.(itens.length, json.count ?? itens.length);
+    if (pagina === maxPaginas) incompleto = true;
+    // ~17 consultas por minuto: abaixo do limite do DJEN (20/min).
+    if (opcoes.esperarLimite) await espera(3_500);
   }
 
   const porNumero = new Map<string, ProcessoDjen>();

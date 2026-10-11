@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { registrarAtividade } from "@/lib/atividade";
+import { exigir } from "@/lib/usuario";
 import { requireEscritorioId } from "@/lib/session";
 import { clienteValido, processoValido } from "@/lib/tenant";
 import { parseInputDateTimeBR } from "@/lib/format";
@@ -77,8 +79,10 @@ export async function toggleAtendimentoStatus(formData: FormData) {
 export async function deleteAtendimento(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
-  const escritorioId = await requireEscritorioId();
+  const { escritorioId } = await exigir("excluir");
+  const alvo = await prisma.atendimento.findFirst({ where: { id, escritorioId }, select: { titulo: true } });
   await prisma.atendimento.deleteMany({ where: { id, escritorioId } });
+  if (alvo) await registrarAtividade("EXCLUIU", "Atendimento", alvo.titulo, id);
   revalidatePath("/atendimentos");
   redirect("/atendimentos");
 }

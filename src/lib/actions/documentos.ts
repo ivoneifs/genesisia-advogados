@@ -5,6 +5,8 @@ import { randomUUID } from "node:crypto";
 import { mkdir, writeFile, unlink } from "node:fs/promises";
 import path from "node:path";
 import { prisma } from "@/lib/db";
+import { registrarAtividade } from "@/lib/atividade";
+import { exigir } from "@/lib/usuario";
 import { requireEscritorioId } from "@/lib/session";
 import { clienteValido, processoValido } from "@/lib/tenant";
 
@@ -56,6 +58,7 @@ export async function createDocumento(formData: FormData) {
       arquivoTam,
     },
   });
+  await registrarAtividade("CRIOU", "Documento", titulo, id);
 
   revalidatePath("/documentos");
 }
@@ -64,11 +67,12 @@ export async function deleteDocumento(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
 
-  const escritorioId = await requireEscritorioId();
+  const { escritorioId } = await exigir("excluir");
   const documento = await prisma.documento.findFirst({ where: { id, escritorioId } });
   if (!documento) return;
 
   await prisma.documento.delete({ where: { id } });
+  await registrarAtividade("EXCLUIU", "Documento", documento.titulo, id);
 
   if (documento.arquivoNome) {
     await unlink(path.join(UPLOAD_DIR, id)).catch(() => {});

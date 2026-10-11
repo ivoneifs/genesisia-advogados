@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
+import { registrarAtividade } from "@/lib/atividade";
+import { exigir } from "@/lib/usuario";
 import { getSession, requireEscritorioId } from "@/lib/session";
 import { processoValido } from "@/lib/tenant";
 import { runWorkflows } from "@/lib/workflows";
@@ -33,6 +35,8 @@ export async function createPrazo(formData: FormData) {
     },
   });
 
+  await registrarAtividade("CRIOU", "Prazo", `${titulo} (vence ${vencimento.toLocaleDateString("pt-BR", { timeZone: "UTC" })})`, processoOk);
+
   if (prioridade === "ALTA") {
     await runWorkflows(escritorioId, "PRAZO_ALTA", {
       processoId,
@@ -58,6 +62,8 @@ export async function togglePrazoStatus(formData: FormData) {
     where: { id, escritorioId },
     data: { status: status === "CUMPRIDO" ? "PENDENTE" : "CUMPRIDO" },
   });
+  const prazo = await prisma.prazo.findFirst({ where: { id, escritorioId }, select: { titulo: true } });
+  if (prazo) await registrarAtividade(status === "CUMPRIDO" ? "REABRIU" : "CONCLUIU", "Prazo", prazo.titulo, id);
 
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/dashboard");
@@ -69,8 +75,10 @@ export async function deletePrazo(formData: FormData) {
   const processoId = String(formData.get("processoId") ?? "");
   if (!id) return;
 
-  const escritorioId = await requireEscritorioId();
+  const { escritorioId } = await exigir("excluir");
+  const alvo = await prisma.prazo.findFirst({ where: { id, escritorioId }, select: { titulo: true } });
   await prisma.prazo.deleteMany({ where: { id, escritorioId } });
+  if (alvo) await registrarAtividade("EXCLUIU", "Prazo", alvo.titulo, id);
 
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/dashboard");
