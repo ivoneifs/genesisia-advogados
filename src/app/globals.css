@@ -34,3 +34,12 @@ body {
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* Paleta própria do console administrativo (/admin). Todos os componentes
+   que usam var(--brand) dentro dele herdam o índigo. */
+.admin-theme {
+  --background: #f8fafc;
+  --brand: #4f46e5;
+  --brand-dark: #4338ca;
+  --accent: #8b5cf6;
+}
