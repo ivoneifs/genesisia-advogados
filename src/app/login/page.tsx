@@ -1,12 +1,25 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { Suspense, useActionState, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { loginAction, registerAction, type AuthState } from "@/lib/actions/auth";
 import Link from "next/link";
 import AuthShell from "@/components/auth-shell";
 
 export default function LoginPage() {
-  const [mode, setMode] = useState<"login" | "register">("login");
+  return (
+    <Suspense>
+      <Login />
+    </Suspense>
+  );
+}
+
+function Login() {
+  // Vindo da landing ("Teste grátis"), abre direto no cadastro.
+  const params = useSearchParams();
+  const [mode, setMode] = useState<"login" | "register">(
+    params.get("cadastro") === "1" ? "register" : "login"
+  );
   const [loginState, loginFormAction, loginPending] = useActionState<
     AuthState,
     FormData
