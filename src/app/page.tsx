@@ -141,7 +141,7 @@ const FAQ = [
   },
   {
     p: "Como funciona o pagamento do Plano Pro?",
-    r: "São R$ 4.000 em pagamento único, com 12 meses de suporte total incluídos. A partir do 13º mês, o contrato segue com mensalidade de R$ 500.",
+    r: "R$ 4.000 à vista ou 10x de R$ 500, com 12 meses de suporte total incluídos. A partir do 13º mês, o contrato segue com mensalidade de R$ 500.",
   },
 ];
 
@@ -487,10 +487,13 @@ export default async function Home() {
                   </div>
                   <p className="mt-6 flex flex-wrap items-baseline gap-x-3 gap-y-1">
                     <span className="font-[family-name:var(--font-serif)] text-6xl sm:text-7xl">R$ 4.000</span>
-                    <span className="text-[var(--lp-mute)]">pagamento único</span>
+                    <span className="text-[var(--lp-mute)]">à vista</span>
                   </p>
-                  <p className="mt-2 text-sm text-white/70">
-                    Equivale a <b className="text-white">R$ 333 por mês</b> no primeiro ano, com{" "}
+                  <p className="mt-2 inline-flex w-fit items-center gap-2 rounded-full border border-[var(--lp-signal)]/30 bg-[var(--lp-signal)]/10 px-3 py-1 text-sm text-white">
+                    ou <b className="text-[var(--lp-signal)]">10x de R$ 500</b>
+                  </p>
+                  <p className="mt-3 text-sm text-white/70">
+                    À vista, equivale a <b className="text-white">R$ 333 por mês</b> no primeiro ano, com{" "}
                     <b className="text-white">12 meses de suporte total</b> incluídos.
                   </p>
                   <ul className="mt-8 grid gap-3 text-sm text-white/85 sm:grid-cols-2">
