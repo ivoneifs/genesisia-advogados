@@ -11,7 +11,7 @@ import type { Cliente, Processo } from "@prisma/client";
 
 type ProcessoResumo = Pick<
   Processo,
-  "id" | "numero" | "vara" | "tribunal" | "parteContraria"
+  "id" | "numero" | "vara" | "tribunal" | "parteContraria" | "clienteId"
 >;
 
 const SUGESTOES_IA = [
@@ -24,21 +24,24 @@ export default function PecaGenerator({
   clientes,
   processos,
   advogados,
+  inicial,
 }: {
   clientes: Cliente[];
   processos: ProcessoResumo[];
   advogados: { id: string; nome: string; oab: string; uf: string; email: string | null }[];
+  /** Vindo da página de um processo: já abre com processo, cliente e advogado. */
+  inicial?: { processoId: string; clienteId: string; advogadoId: string | null };
 }) {
-  const [advogadoId, setAdvogadoId] = useState(advogados[0]?.id ?? "");
+  const [advogadoId, setAdvogadoId] = useState(inicial?.advogadoId ?? advogados[0]?.id ?? "");
   const advogado = advogados.find((a) => a.id === advogadoId);
-  const [modo, setModo] = useState<"modelo" | "ia" | "biblioteca">("modelo");
+  const [modo, setModo] = useState<"modelo" | "ia" | "biblioteca">(inicial ? "biblioteca" : "modelo");
   const [area, setArea] = useState("");
   const [busca, setBusca] = useState("");
   const [pecaId, setPecaId] = useState("");
   const [detalhes, setDetalhes] = useState("");
   const [templateId, setTemplateId] = useState(TEMPLATES[0].id);
-  const [clienteId, setClienteId] = useState("");
-  const [processoId, setProcessoId] = useState("");
+  const [clienteId, setClienteId] = useState(inicial?.clienteId ?? "");
+  const [processoId, setProcessoId] = useState(inicial?.processoId ?? "");
   const [copied, setCopied] = useState(false);
 
   const [instrucao, setInstrucao] = useState("");
@@ -301,7 +304,12 @@ export default function PecaGenerator({
               </label>
               <select
                 value={processoId}
-                onChange={(e) => setProcessoId(e.target.value)}
+                onChange={(e) => {
+                  // Ao escolher o processo, o cliente dele já vem junto.
+                  setProcessoId(e.target.value);
+                  const doProcesso = processos.find((p) => p.id === e.target.value)?.clienteId;
+                  if (doProcesso) setClienteId(doProcesso);
+                }}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
               >
                 <option value="">—</option>
