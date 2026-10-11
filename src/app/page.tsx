@@ -21,6 +21,7 @@ import {
   FileText,
   Check,
   Plus,
+  MessageCircle,
 } from "lucide-react";
 
 const serif = Instrument_Serif({
@@ -44,6 +45,11 @@ export const metadata: Metadata = {
 };
 
 const CADASTRO = "/login?cadastro=1";
+
+// WhatsApp de vendas (abre a conversa com a mensagem pronta).
+const WHATSAPP_VENDAS = `https://wa.me/5574988736885?text=${encodeURIComponent(
+  "Olá! Vim pelo site e quero conhecer o Plano Pro do Genesis IA."
+)}`;
 
 const RECURSOS = [
   {
@@ -516,8 +522,17 @@ export default async function Home() {
                     Começar pelo teste grátis
                     <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" />
                   </Link>
+                  <a
+                    href={WHATSAPP_VENDAS}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 px-6 py-3.5 font-medium text-white transition hover:border-[#25d366]/60 hover:bg-[#25d366]/10"
+                  >
+                    <MessageCircle size={17} className="text-[#25d366]" />
+                    Falar com um especialista
+                  </a>
                   <p className="mt-3 text-center text-xs text-[var(--lp-mute)]">
-                    Teste 14 dias e contrate o Pro quando estiver pronto.
+                    Teste 14 dias ou contrate direto pelo WhatsApp.
                   </p>
                 </div>
               </div>
@@ -570,11 +585,30 @@ export default async function Home() {
                 Começar teste grátis de 14 dias
                 <ArrowUpRight size={18} className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
               </Link>
-              <p className="mt-4 text-sm text-black/55">Sem cartão de crédito · Cancelamento livre</p>
+              <p className="mt-4 text-sm text-black/55">
+                Sem cartão de crédito ·{" "}
+                <a href={WHATSAPP_VENDAS} target="_blank" rel="noopener noreferrer" className="font-medium text-black underline underline-offset-4">
+                  ou fale com a gente no WhatsApp
+                </a>
+              </p>
             </div>
           </div>
         </Reveal>
       </section>
+
+      {/* WhatsApp flutuante */}
+      <a
+        href={WHATSAPP_VENDAS}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Falar no WhatsApp"
+        className="group fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full bg-[#25d366] py-3.5 pl-3.5 pr-3.5 text-black shadow-[0_10px_40px_-5px_rgba(37,211,102,0.6)] transition-all hover:pr-5"
+      >
+        <MessageCircle size={24} strokeWidth={2.2} />
+        <span className="max-w-0 overflow-hidden whitespace-nowrap text-sm font-semibold transition-all duration-300 group-hover:max-w-[180px]">
+          Falar com especialista
+        </span>
+      </a>
 
       {/* RODAPÉ */}
       <footer className="border-t border-white/[0.06]">
