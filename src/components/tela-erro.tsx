@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { recarregarSeHouverNovaVersao } from "@/lib/nova-versao";
 import Link from "next/link";
-import { AlertTriangle, RotateCcw } from "lucide-react";
+import { AlertTriangle, Loader2, RotateCcw } from "lucide-react";
 
 export default function TelaErro({
   error,
@@ -13,9 +14,22 @@ export default function TelaErro({
   reset: () => void;
   inicio?: string;
 }) {
+  // Depois de um deploy, a página antiga pode falhar: nesse caso recarrega sozinha.
+  const [atualizando, setAtualizando] = useState(false);
   useEffect(() => {
     console.error(error);
+    recarregarSeHouverNovaVersao().then((recarregando) => {
+      if (recarregando) setAtualizando(true);
+    });
   }, [error]);
+
+  if (atualizando) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center gap-2 text-sm text-gray-500">
+        <Loader2 size={16} className="animate-spin" /> Atualizando para a versão mais recente...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center p-4">

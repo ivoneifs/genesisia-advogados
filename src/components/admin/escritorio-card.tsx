@@ -4,7 +4,6 @@ import { useState } from "react";
 import {
   updateEscritorioNome,
   updateEscritorioPlano,
-  deleteEscritorio,
   toggleUserAtivo,
   deleteUser,
   alterarPapelUsuario,
@@ -12,6 +11,7 @@ import {
 import { formatDate, formatDateBR } from "@/lib/format";
 import AdicionarUsuarioForm from "./adicionar-usuario-form";
 import ResetSenhaButton from "./reset-senha-button";
+import ExcluirEscritorio from "./excluir-escritorio";
 import {
   Avatar,
   PlanoTag,
@@ -174,26 +174,7 @@ export default function EscritorioCard({
           >
             <SlidersHorizontal size={15} />
           </button>
-          <form
-            action={deleteEscritorio}
-            onSubmit={(e) => {
-              if (
-                !confirm(
-                  `Excluir "${escritorio.nome}"? Todos os processos, clientes, documentos e usuários deste escritório serão apagados. Esta ação não pode ser desfeita.`
-                )
-              )
-                e.preventDefault();
-            }}
-          >
-            <input type="hidden" name="id" value={escritorio.id} />
-            <button
-              type="submit"
-              title="Excluir escritório e todos os dados"
-              className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
-            >
-              <Trash2 size={15} />
-            </button>
-          </form>
+          <ExcluirEscritorio id={escritorio.id} nome={escritorio.nome} />
         </div>
       </div>
 

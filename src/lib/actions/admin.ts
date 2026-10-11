@@ -162,14 +162,43 @@ export async function toggleEscritorioAtivo(formData: FormData) {
   revalidatePath("/admin");
 }
 
-export async function deleteEscritorio(formData: FormData) {
-  await requireSuperadmin();
-  const id = String(formData.get("id") ?? "");
-  if (!id) return;
+export type ExcluirState = { error: string } | { ok: true } | undefined;
 
-  await prisma.escritorio.delete({ where: { id } });
+/**
+ * Exclui o escritório e TODOS os dados dele (processos, publicações, clientes...).
+ * Exige digitar o nome exato do escritório. Os usuários ficam desativados
+ * (não são apagados) e a exclusão fica registrada no log do servidor.
+ */
+export async function deleteEscritorio(
+  _prev: ExcluirState,
+  formData: FormData
+): Promise<ExcluirState> {
+  const session = await requireSuperadmin();
+  const id = String(formData.get("id") ?? "");
+  const confirmacao = String(formData.get("confirmacao") ?? "").trim();
+
+  const escritorio = await prisma.escritorio.findUnique({
+    where: { id },
+    include: { _count: { select: { processos: true, publicacoes: true, clientes: true, users: true } } },
+  });
+  if (!escritorio) return { error: "Escritório não encontrado." };
+  if (confirmacao !== escritorio.nome.trim()) {
+    return { error: "O nome digitado não confere. Nada foi excluído." };
+  }
+
+  await prisma.$transaction([
+    prisma.user.updateMany({ where: { escritorioId: id }, data: { ativo: false } }),
+    prisma.escritorio.delete({ where: { id } }),
+  ]);
+  console.warn(
+    `[admin] ESCRITÓRIO EXCLUÍDO por ${session.email} em ${new Date().toISOString()}: ` +
+      `"${escritorio.nome}" (${id}) — ${escritorio._count.processos} processos, ` +
+      `${escritorio._count.publicacoes} publicações, ${escritorio._count.clientes} clientes, ` +
+      `${escritorio._count.users} usuários desativados`
+  );
   revalidatePath("/admin/escritorios");
   revalidatePath("/admin");
+  return { ok: true };
 }
 
 export async function toggleUserAtivo(formData: FormData) {
