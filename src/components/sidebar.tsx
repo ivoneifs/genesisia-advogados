@@ -21,6 +21,7 @@ import {
   LifeBuoy,
   Bot,
   UserRound,
+  Telescope,
 } from "lucide-react";
 
 const NAV = [
@@ -35,6 +36,7 @@ const NAV = [
   { href: "/clientes", label: "Clientes", icon: Users2 },
   { href: "/advogados", label: "Advogados", icon: UserRound },
   { href: "/publicacoes", label: "Publicações", icon: Newspaper },
+  { href: "/pesquisa", label: "Pesquisa", icon: Telescope },
   { href: "/financeiro", label: "Financeiro", icon: Wallet },
   { href: "/pecas", label: "Criação de peças", icon: Sparkles, badge: "IA" },
   { href: "/documentos", label: "Documentos", icon: Paperclip },
