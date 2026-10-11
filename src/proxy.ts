@@ -10,9 +10,11 @@ export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (
+    pathname === "/" || // landing page pública
     PUBLIC_PATHS.some((p) => pathname.startsWith(p)) ||
     pathname.startsWith("/_next") ||
-    pathname.startsWith("/favicon")
+    pathname.startsWith("/favicon") ||
+    pathname.startsWith("/icon")
   ) {
     return NextResponse.next();
   }

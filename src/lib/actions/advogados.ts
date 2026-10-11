@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { registrarAtividade } from "@/lib/atividade";
+import { exigir } from "@/lib/usuario";
 import { requireEscritorioId } from "@/lib/session";
 import { UFS } from "@/lib/djen";
 
@@ -65,8 +67,10 @@ export async function updateAdvogado(id: string, formData: FormData) {
 export async function deleteAdvogado(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
-  const escritorioId = await requireEscritorioId();
+  const { escritorioId } = await exigir("excluir");
+  const alvo = await prisma.advogado.findFirst({ where: { id, escritorioId }, select: { nome: true } });
   await prisma.advogado.deleteMany({ where: { id, escritorioId } });
+  if (alvo) await registrarAtividade("EXCLUIU", "Advogado", alvo.nome, id);
   revalidatePath("/advogados");
   redirect("/advogados");
 }

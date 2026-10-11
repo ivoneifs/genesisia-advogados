@@ -16,9 +16,12 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { requireEscritorioId } from "@/lib/session";
+import { usuarioAtual } from "@/lib/usuario";
+import { pode } from "@/lib/papeis";
 
 export default async function DashboardPage() {
   const escritorioId = await requireEscritorioId();
+  const verFinanceiro = pode((await usuarioAtual())?.role, "financeiro");
   const now = new Date();
   const in7 = new Date();
   in7.setDate(in7.getDate() + 7);
@@ -87,12 +90,16 @@ export default async function DashboardPage() {
       icon: ListChecks,
       href: "/agenda",
     },
-    {
-      label: "A receber",
-      value: formatCurrency(aReceber._sum.valor ?? 0),
-      icon: Wallet,
-      href: "/financeiro",
-    },
+    ...(verFinanceiro
+      ? [
+          {
+            label: "A receber",
+            value: formatCurrency(aReceber._sum.valor ?? 0),
+            icon: Wallet,
+            href: "/financeiro",
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -106,7 +113,7 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${stats.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
         {stats.map(({ label, value, icon: Icon, href }) => (
           <Link
             key={label}

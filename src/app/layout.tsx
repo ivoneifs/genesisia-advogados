@@ -13,7 +13,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Genesis IA | Gestão Jurídica Inteligente",
+  title: {
+    default: "Genesis IA | Gestão Jurídica Inteligente",
+    template: "%s · Genesis IA",
+  },
   description:
     "Genesis IA: gestão de processos, prazos, clientes, agenda e financeiro para escritórios de advocacia.",
 };

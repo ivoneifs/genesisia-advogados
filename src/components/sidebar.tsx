@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -22,83 +24,184 @@ import {
   Bot,
   UserRound,
   Telescope,
+  MessageSquareText,
+  UsersRound,
+  History,
+  Menu,
+  X,
 } from "lucide-react";
+import { pode, type Permissao } from "@/lib/papeis";
 
-const NAV = [
-  { href: "/dashboard", label: "Área de trabalho", icon: LayoutDashboard },
-  { href: "/assistente", label: "Assistente IA", icon: Bot, badge: "IA" },
-  { href: "/kanban", label: "Gestão kanban", icon: Kanban },
-  { href: "/agenda", label: "Agenda", icon: CalendarDays },
-  { href: "/workflows", label: "Workflows", icon: Workflow },
-  { href: "/contatos", label: "Contatos", icon: BookUser },
-  { href: "/atendimentos", label: "Atendimentos", icon: MessageCircle },
-  { href: "/processos", label: "Processos e casos", icon: Gavel },
-  { href: "/clientes", label: "Clientes", icon: Users2 },
-  { href: "/advogados", label: "Advogados", icon: UserRound },
-  { href: "/publicacoes", label: "Publicações", icon: Newspaper },
-  { href: "/pesquisa", label: "Pesquisa", icon: Telescope },
-  { href: "/financeiro", label: "Financeiro", icon: Wallet },
-  { href: "/pecas", label: "Criação de peças", icon: Sparkles, badge: "IA" },
-  { href: "/documentos", label: "Documentos", icon: Paperclip },
-  { href: "/indicadores", label: "Indicadores", icon: BarChart3 },
-  { href: "/alertas", label: "Alertas", icon: Bell },
+type Item = {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  badge?: string;
+  perm?: Permissao;
+};
+
+const SECOES: { titulo: string; itens: Item[] }[] = [
+  {
+    titulo: "Principal",
+    itens: [
+      { href: "/dashboard", label: "Área de trabalho", icon: LayoutDashboard },
+      { href: "/assistente", label: "Assistente IA", icon: Bot, badge: "IA" },
+      { href: "/agenda", label: "Agenda", icon: CalendarDays },
+      { href: "/alertas", label: "Alertas", icon: Bell },
+    ],
+  },
+  {
+    titulo: "Jurídico",
+    itens: [
+      { href: "/processos", label: "Processos e casos", icon: Gavel },
+      { href: "/kanban", label: "Gestão kanban", icon: Kanban },
+      { href: "/publicacoes", label: "Publicações", icon: Newspaper },
+      { href: "/pecas", label: "Criação de peças", icon: Sparkles, badge: "IA" },
+      { href: "/documentos", label: "Documentos", icon: Paperclip },
+      { href: "/pesquisa", label: "Pesquisa", icon: Telescope },
+    ],
+  },
+  {
+    titulo: "Relacionamento",
+    itens: [
+      { href: "/clientes", label: "Clientes", icon: Users2 },
+      { href: "/atendimentos", label: "Atendimentos", icon: MessageCircle },
+      { href: "/contatos", label: "Contatos", icon: BookUser },
+      { href: "/advogados", label: "Advogados", icon: UserRound },
+    ],
+  },
+  {
+    titulo: "Gestão",
+    itens: [
+      { href: "/financeiro", label: "Financeiro", icon: Wallet, perm: "financeiro" },
+      { href: "/indicadores", label: "Indicadores", icon: BarChart3 },
+      { href: "/workflows", label: "Workflows", icon: Workflow },
+      { href: "/equipe", label: "Equipe", icon: UsersRound, perm: "gerenciar" },
+      { href: "/whatsapp", label: "WhatsApp", icon: MessageSquareText, perm: "gerenciar" },
+      { href: "/atividades", label: "Atividades", icon: History, perm: "gerenciar" },
+    ],
+  },
 ];
 
-export default function Sidebar() {
-  const pathname = usePathname();
-
+function Logo() {
   return (
-    <aside className="hidden md:flex w-64 shrink-0 flex-col border-r border-gray-200 bg-white">
-      <div className="h-16 flex items-center gap-2 px-6 border-b border-gray-200 shrink-0">
-        <div className="h-8 w-8 rounded-lg bg-[var(--brand)] text-white flex items-center justify-center">
-          <Scale size={16} />
-        </div>
-        <span className="font-semibold text-gray-900 tracking-tight">
-          Genesis IA
-        </span>
+    <div className="h-16 flex items-center gap-2.5 px-6 border-b border-white/10 shrink-0">
+      <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 shadow-lg shadow-indigo-500/30 flex items-center justify-center text-white">
+        <Scale size={16} />
       </div>
+      <span className="font-semibold tracking-tight text-white">Genesis IA</span>
+    </div>
+  );
+}
 
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {NAV.map(({ href, label, icon: Icon, badge }) => {
-          const active = pathname === href || pathname?.startsWith(href + "/");
+function Navegacao({ papel, onNavegar }: { papel: string; onNavegar?: () => void }) {
+  const pathname = usePathname();
+  return (
+    <>
+      <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
+        {SECOES.map((secao) => {
+          const itens = secao.itens.filter((i) => !i.perm || pode(papel, i.perm));
+          if (itens.length === 0) return null;
           return (
-            <Link
-              key={href}
-              href={href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                active
-                  ? "bg-[var(--brand)]/10 text-[var(--brand)]"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-              }`}
-            >
-              <Icon size={18} className="shrink-0" />
-              <span className="flex-1 truncate">{label}</span>
-              {badge && (
-                <span className="text-[10px] font-semibold bg-[var(--brand)]/10 text-[var(--brand)] px-1.5 py-0.5 rounded">
-                  {badge}
-                </span>
-              )}
-            </Link>
+            <div key={secao.titulo}>
+              <p className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/35">
+                {secao.titulo}
+              </p>
+              <div className="space-y-0.5">
+                {itens.map(({ href, label, icon: Icon, badge }) => {
+                  const active = pathname === href || pathname?.startsWith(href + "/");
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={onNavegar}
+                      className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                        active
+                          ? "bg-gradient-to-r from-indigo-500/25 to-violet-500/10 text-white ring-1 ring-inset ring-white/10"
+                          : "text-white/60 hover:bg-white/5 hover:text-white"
+                      }`}
+                    >
+                      <Icon size={17} className="shrink-0" />
+                      <span className="flex-1 truncate">{label}</span>
+                      {badge && (
+                        <span className="text-[10px] font-semibold bg-violet-400/20 text-violet-200 px-1.5 py-0.5 rounded">
+                          {badge}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
           );
         })}
       </nav>
 
-      <div className="p-4 border-t border-gray-200 space-y-3 shrink-0">
-        <div className="rounded-lg bg-gradient-to-br from-[var(--brand)] to-teal-600 text-white p-4 text-xs">
-          <p className="font-semibold mb-1">IA Genesis</p>
-          <p className="text-white/80 leading-relaxed">
-            Prazos e tarefas urgentes são destacados automaticamente no seu
-            dashboard.
-          </p>
-        </div>
+      <div className="p-3 border-t border-white/10 shrink-0">
         <Link
           href="/suporte"
-          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+          onClick={onNavegar}
+          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-white/60 hover:bg-white/5 hover:text-white"
         >
-          <LifeBuoy size={18} />
+          <LifeBuoy size={17} />
           Suporte
         </Link>
       </div>
+    </>
+  );
+}
+
+const FUNDO = "bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950";
+
+export default function Sidebar({ papel }: { papel: string }) {
+  return (
+    <aside className={`hidden md:flex w-64 shrink-0 flex-col sticky top-0 h-screen ${FUNDO}`}>
+      <Logo />
+      <Navegacao papel={papel} />
     </aside>
+  );
+}
+
+/** Botão de menu + gaveta lateral para telas pequenas. */
+export function MenuCelular({ papel }: { papel: string }) {
+  const [aberto, setAberto] = useState(false);
+
+  // Trava a rolagem do fundo enquanto o menu está aberto (cada link fecha o menu).
+  useEffect(() => {
+    document.body.style.overflow = aberto ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [aberto]);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setAberto(true)}
+        aria-label="Abrir menu"
+        className="md:hidden h-9 w-9 -ml-2 flex items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100"
+      >
+        <Menu size={20} />
+      </button>
+      {aberto && createPortal(
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" onClick={() => setAberto(false)} />
+          <aside className={`relative w-72 max-w-[85vw] h-full flex flex-col shadow-2xl ${FUNDO}`}>
+            <button
+              type="button"
+              onClick={() => setAberto(false)}
+              aria-label="Fechar menu"
+              className="absolute right-3 top-4 h-8 w-8 flex items-center justify-center rounded-lg text-white/70 hover:bg-white/10"
+            >
+              <X size={18} />
+            </button>
+            <Logo />
+            <Navegacao papel={papel} onNavegar={() => setAberto(false)} />
+          </aside>
+        </div>,
+        document.body
+      )}
+    </>
   );
 }
