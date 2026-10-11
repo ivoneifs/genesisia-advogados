@@ -22,9 +22,12 @@ export function nomeInstancia(escritorioId: string) {
  */
 export function normalizarWhatsapp(tel: string | null | undefined): string | null {
   if (!tel) return null;
-  let d = tel.replace(/\D/g, "");
+  const t = tel.trim();
+  let d = t.replace(/\D/g, "");
+  // Com código de país explícito (+XX ou 00XX), só aceitamos o do Brasil.
+  const internacional = t.startsWith("+") || d.startsWith("00");
   if (d.startsWith("00")) d = d.slice(2);
-  if (d.length === 10 || d.length === 11) d = "55" + d;
+  if (!internacional && (d.length === 10 || d.length === 11)) d = "55" + d;
   if (!d.startsWith("55") || d.length < 12 || d.length > 13) return null;
   return d;
 }

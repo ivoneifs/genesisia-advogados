@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db";
 import { motivoBloqueio } from "@/lib/acesso";
 import Sidebar from "@/components/sidebar";
 import Topbar from "@/components/topbar";
+import AvisoPermissao from "@/components/aviso-permissao";
+import { Suspense } from "react";
 
 export default async function AppLayout({
   children,
@@ -29,12 +31,15 @@ export default async function AppLayout({
 
   return (
     <div className="min-h-screen flex bg-[var(--background)]">
-      <Sidebar />
+      <Sidebar papel={user.role} />
       <div className="flex-1 flex flex-col min-w-0">
-        <Topbar name={session.name} escritorioNome={user.escritorio.nome} />
-        <main className="flex-1 p-6 lg:p-8 max-w-[1400px] w-full mx-auto">
+        <Topbar name={user.name} papel={user.role} escritorioNome={user.escritorio.nome} />
+        <main className="flex-1 px-4 py-6 sm:p-6 lg:p-8 max-w-[1400px] w-full mx-auto">
           {children}
         </main>
+        <Suspense>
+          <AvisoPermissao />
+        </Suspense>
       </div>
     </div>
   );

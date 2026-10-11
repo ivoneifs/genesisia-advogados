@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { registrarAtividade } from "@/lib/atividade";
+import { exigir } from "@/lib/usuario";
 import { getSession, requireEscritorioId } from "@/lib/session";
 import { clienteValido } from "@/lib/tenant";
 import { runWorkflows } from "@/lib/workflows";
@@ -40,6 +42,7 @@ export async function createProcesso(formData: FormData) {
     },
   });
 
+  await registrarAtividade("CRIOU", "Processo", `Processo ${numero}`, processo.id);
   revalidatePath("/processos");
   redirect(`/processos/${processo.id}`);
 }
@@ -69,6 +72,7 @@ export async function updateProcesso(id: string, formData: FormData) {
     },
   });
 
+  await registrarAtividade("EDITOU", "Processo", `Processo ${numero}`, id);
   revalidatePath("/processos");
   revalidatePath(`/processos/${id}`);
   redirect(`/processos/${id}`);
@@ -106,8 +110,10 @@ export async function moveProcessoStatus(formData: FormData) {
 export async function deleteProcesso(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
-  const escritorioId = await requireEscritorioId();
+  const { escritorioId } = await exigir("excluir");
+  const alvo = await prisma.processo.findFirst({ where: { id, escritorioId }, select: { numero: true } });
   await prisma.processo.deleteMany({ where: { id, escritorioId } });
+  if (alvo) await registrarAtividade("EXCLUIU", "Processo", `Processo ${alvo.numero}`, id);
   revalidatePath("/processos");
   redirect("/processos");
 }

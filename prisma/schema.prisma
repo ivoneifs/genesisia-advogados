@@ -30,6 +30,7 @@ model Escritorio {
   atendimentos Atendimento[]
 
   configWhatsapp ConfigWhatsapp?
+  atividades      Atividade[]
   alertasEnviados AlertaEnviado[]
 }
 
@@ -38,7 +39,7 @@ model User {
   name      String
   email     String   @unique
   password  String
-  role      String   @default("ADVOGADO")
+  role      String   @default("ADVOGADO") // SUPERADMIN | SOCIO | ADVOGADO | ESTAGIARIO
   ativo     Boolean  @default(true)
   whatsapp  String?  // recebe alertas da agenda, prazos e publicações
   createdAt DateTime @default(now())
@@ -49,6 +50,7 @@ model User {
   processos Processo[]
   prazos    Prazo[]
   tarefas   Tarefa[]
+  recuperacoes RecuperacaoSenha[]
 }
 
 model Cliente {
@@ -292,4 +294,36 @@ model AlertaEnviado {
   escritorio   Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
 
   @@index([escritorioId, createdAt])
+}
+
+// Histórico de atividades (auditoria) do escritório.
+model Atividade {
+  id           String   @id @default(cuid())
+  acao         String   // CRIOU | EDITOU | EXCLUIU | CONCLUIU | REABRIU
+  entidade     String   // Processo, Cliente, Prazo...
+  entidadeId   String?
+  descricao    String
+  userId       String?
+  userNome     String
+  createdAt    DateTime @default(now())
+
+  escritorioId String
+  escritorio   Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
+
+  @@index([escritorioId, createdAt])
+}
+
+// Código de recuperação de senha enviado por WhatsApp.
+model RecuperacaoSenha {
+  id         String   @id @default(cuid())
+  userId     String
+  codigoHash String
+  expira     DateTime
+  tentativas Int      @default(0)
+  usado      Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

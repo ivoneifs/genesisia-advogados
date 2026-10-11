@@ -7,6 +7,7 @@ import {
   deleteEscritorio,
   toggleUserAtivo,
   deleteUser,
+  alterarPapelUsuario,
 } from "@/lib/actions/admin";
 import { formatDate, formatDateBR } from "@/lib/format";
 import AdicionarUsuarioForm from "./adicionar-usuario-form";
@@ -279,6 +280,20 @@ export default function EscritorioCard({
               </p>
               <p className="text-xs text-gray-500 truncate">{u.email}</p>
             </div>
+            <form action={alterarPapelUsuario}>
+              <input type="hidden" name="id" value={u.id} />
+              <select
+                name="role"
+                defaultValue={u.role}
+                title="Perfil de acesso"
+                onChange={(e) => e.currentTarget.form?.requestSubmit()}
+                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
+              >
+                <option value="SOCIO">Sócio / admin</option>
+                <option value="ADVOGADO">Advogado(a)</option>
+                <option value="ESTAGIARIO">Estagiário(a)</option>
+              </select>
+            </form>
             <form action={toggleUserAtivo}>
               <input type="hidden" name="id" value={u.id} />
               <input type="hidden" name="ativo" value={String(u.ativo)} />

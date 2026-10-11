@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
+import { registrarAtividade } from "@/lib/atividade";
+import { exigir } from "@/lib/usuario";
 import { requireEscritorioId } from "@/lib/session";
 
 export async function createWorkflow(formData: FormData) {
@@ -40,7 +42,9 @@ export async function toggleWorkflow(formData: FormData) {
 export async function deleteWorkflow(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
-  const escritorioId = await requireEscritorioId();
+  const { escritorioId } = await exigir("excluir");
+  const alvo = await prisma.workflow.findFirst({ where: { id, escritorioId }, select: { nome: true } });
   await prisma.workflow.deleteMany({ where: { id, escritorioId } });
+  if (alvo) await registrarAtividade("EXCLUIU", "Workflow", alvo.nome, id);
   revalidatePath("/workflows");
 }

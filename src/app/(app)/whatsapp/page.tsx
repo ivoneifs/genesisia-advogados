@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { requireEscritorioId } from "@/lib/session";
+import { exigirPagina } from "@/lib/usuario";
 import { formatDateTimeBR } from "@/lib/format";
 import {
   salvarConfigWhatsapp,
@@ -66,7 +66,7 @@ function Toggle({
 }
 
 export default async function WhatsappPage() {
-  const escritorioId = await requireEscritorioId();
+  const { escritorioId } = await exigirPagina("gerenciar");
 
   const [cfg, usuarios, advogados, clientesComTel, historico] = await Promise.all([
     prisma.configWhatsapp.findUnique({ where: { escritorioId } }),

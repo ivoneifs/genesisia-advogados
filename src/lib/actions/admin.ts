@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { generatePassword } from "@/lib/generate-password";
 import { novoTrialExpira } from "@/lib/acesso";
+import { papelValido } from "@/lib/papeis";
 
 export type AdminState =
   | { error: string }
@@ -60,7 +61,7 @@ export async function createEscritorio(
   });
 
   await prisma.user.create({
-    data: { name, email, password: hashed, escritorioId: escritorio.id },
+    data: { name, email, password: hashed, escritorioId: escritorio.id, role: "SOCIO" },
   });
 
   revalidatePath("/admin/escritorios");
@@ -97,7 +98,13 @@ export async function createUserInEscritorio(
   const hashed = await bcrypt.hash(password, 10);
 
   await prisma.user.create({
-    data: { name, email, password: hashed, escritorioId },
+    data: {
+      name,
+      email,
+      password: hashed,
+      escritorioId,
+      role: papelValido(formData.get("role")),
+    },
   });
 
   revalidatePath("/admin/escritorios");
@@ -206,4 +213,17 @@ export async function resetUserPassword(
 
   revalidatePath("/admin/escritorios");
   return { success: true, email: user.email, password };
+}
+
+export async function alterarPapelUsuario(formData: FormData) {
+  await requireSuperadmin();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  const alvo = await prisma.user.findUnique({ where: { id }, select: { role: true } });
+  if (!alvo || alvo.role === "SUPERADMIN") return;
+  await prisma.user.update({
+    where: { id },
+    data: { role: papelValido(formData.get("role")) },
+  });
+  revalidatePath("/admin/escritorios");
 }

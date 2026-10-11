@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { registrarAtividade } from "@/lib/atividade";
+import { exigir } from "@/lib/usuario";
 import { requireEscritorioId } from "@/lib/session";
 
 export async function createCliente(formData: FormData) {
@@ -25,6 +27,7 @@ export async function createCliente(formData: FormData) {
     },
   });
 
+  await registrarAtividade("CRIOU", "Cliente", nome);
   revalidatePath("/clientes");
   redirect("/clientes");
 }
@@ -49,6 +52,7 @@ export async function updateCliente(id: string, formData: FormData) {
     },
   });
 
+  await registrarAtividade("EDITOU", "Cliente", nome, id);
   revalidatePath("/clientes");
   redirect("/clientes");
 }
@@ -56,11 +60,13 @@ export async function updateCliente(id: string, formData: FormData) {
 export async function deleteCliente(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
-  const escritorioId = await requireEscritorioId();
+  const { escritorioId } = await exigir("excluir");
   // Processos exigem cliente: exclusão bloqueada enquanto houver vínculo.
   const processos = await prisma.processo.count({ where: { clienteId: id, escritorioId } });
   if (processos > 0) redirect(`/clientes?erro=processos&n=${processos}`);
 
+  const alvo = await prisma.cliente.findFirst({ where: { id, escritorioId }, select: { nome: true } });
   await prisma.cliente.deleteMany({ where: { id, escritorioId } });
+  if (alvo) await registrarAtividade("EXCLUIU", "Cliente", alvo.nome, id);
   revalidatePath("/clientes");
 }

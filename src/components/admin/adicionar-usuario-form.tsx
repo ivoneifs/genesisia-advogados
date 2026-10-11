@@ -45,6 +45,15 @@ export default function AdicionarUsuarioForm({
           placeholder="E-mail"
           className="flex-1 min-w-[180px] rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40 focus:border-[var(--brand)]"
         />
+        <select
+          name="role"
+          defaultValue="ADVOGADO"
+          className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
+        >
+          <option value="SOCIO">Sócio / admin</option>
+          <option value="ADVOGADO">Advogado(a)</option>
+          <option value="ESTAGIARIO">Estagiário(a)</option>
+        </select>
         <button
           type="submit"
           disabled={pending}

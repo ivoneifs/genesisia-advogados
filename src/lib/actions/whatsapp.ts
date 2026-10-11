@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { requireEscritorioId } from "@/lib/session";
+import { exigir } from "@/lib/usuario";
 import {
   INSTANCIA_CENTRAL,
   desconectarInstancia,
@@ -25,7 +25,7 @@ function erro(e: unknown): { error: string } {
 }
 
 export async function salvarConfigWhatsapp(formData: FormData) {
-  const escritorioId = await requireEscritorioId();
+  const { escritorioId } = await exigir("gerenciar");
   const on = (k: string) => formData.get(k) === "on";
   const hora = Number(formData.get("horaResumo"));
   const data = {
@@ -55,7 +55,7 @@ export async function salvarConfigWhatsapp(formData: FormData) {
 }
 
 export async function salvarWhatsappUsuarios(formData: FormData) {
-  const escritorioId = await requireEscritorioId();
+  const { escritorioId } = await exigir("gerenciar");
   const usuarios = await prisma.user.findMany({
     where: { escritorioId },
     select: { id: true },
@@ -77,7 +77,7 @@ export async function conectarNumeroProprio(
   _prev: WhatsappState,
   _formData: FormData
 ): Promise<WhatsappState> {
-  const escritorioId = await requireEscritorioId();
+  const { escritorioId } = await exigir("gerenciar");
   const instancia = nomeInstancia(escritorioId);
   try {
     const qr = await qrCodeInstancia(instancia);
@@ -95,7 +95,7 @@ export async function conectarNumeroProprio(
 
 export async function usarNumeroCentral(formData: FormData) {
   void formData;
-  const escritorioId = await requireEscritorioId();
+  const { escritorioId } = await exigir("gerenciar");
   const cfg = await prisma.configWhatsapp.findUnique({ where: { escritorioId } });
   if (cfg?.instancia) {
     await desconectarInstancia(cfg.instancia).catch(() => {});
@@ -112,7 +112,7 @@ export async function enviarMensagemTeste(
   _prev: WhatsappState,
   formData: FormData
 ): Promise<WhatsappState> {
-  const escritorioId = await requireEscritorioId();
+  const { escritorioId } = await exigir("gerenciar");
   const numero = normalizarWhatsapp(String(formData.get("numero") ?? ""));
   if (!numero) return { error: "Informe um celular com DDD, ex.: (11) 98765-4321." };
 
