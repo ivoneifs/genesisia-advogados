@@ -113,7 +113,7 @@ export async function registerAction(
     });
 
     const user = await prisma.user.create({
-      data: { name, email, password: hashed, escritorioId: escritorio.id, role: "SOCIO" },
+      data: { name, email, password: hashed, escritorioId: escritorio.id },
     });
 
     await createSession({

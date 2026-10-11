@@ -28,11 +28,6 @@ model Escritorio {
   documentos   Documento[]
   workflows    Workflow[]
   atendimentos Atendimento[]
-
-  configWhatsapp ConfigWhatsapp?
-  importacoes     ImportacaoOab[]
-  atividades      Atividade[]
-  alertasEnviados AlertaEnviado[]
 }
 
 model User {
@@ -40,9 +35,8 @@ model User {
   name      String
   email     String   @unique
   password  String
-  role      String   @default("ADVOGADO") // SUPERADMIN | SOCIO | ADVOGADO | ESTAGIARIO
+  role      String   @default("ADVOGADO")
   ativo     Boolean  @default(true)
-  whatsapp  String?  // recebe alertas da agenda, prazos e publicações
   createdAt DateTime @default(now())
 
   escritorioId String?
@@ -51,7 +45,6 @@ model User {
   processos Processo[]
   prazos    Prazo[]
   tarefas   Tarefa[]
-  recuperacoes RecuperacaoSenha[]
 }
 
 model Cliente {
@@ -63,7 +56,6 @@ model Cliente {
   telefone    String?
   endereco    String?
   observacoes String?
-  receberWhatsapp Boolean @default(true) // avisos de audiências/reuniões
   createdAt   DateTime @default(now())
 
   escritorioId String
@@ -182,7 +174,6 @@ model Publicacao {
   diario         String?
   dataPublicacao DateTime?
   status         String    @default("NAO_TRATADA")
-  alertaEnviado  Boolean   @default(false) // já avisada no WhatsApp
   createdAt      DateTime  @default(now())
 
   escritorioId   String
@@ -261,94 +252,4 @@ model Advogado {
   escritorio   Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
 
   @@unique([escritorioId, oab, uf])
-}
-
-// Alertas por WhatsApp (Evolution API). Uma configuração por escritório.
-model ConfigWhatsapp {
-  id            String   @id @default(cuid())
-  ativo         Boolean  @default(false)
-  instancia     String?  // instância própria na Evolution; vazia = número central
-  numero        String?  // WhatsApp do escritório conectado à instância própria
-  agenda        Boolean  @default(true)
-  prazos        Boolean  @default(true)
-  publicacoes   Boolean  @default(true)
-  resumoDiario  Boolean  @default(true)
-  clientes      Boolean  @default(false) // avisar clientes de audiências/reuniões
-  horaResumo    Int      @default(7)     // hora de Brasília
-  updatedAt     DateTime @updatedAt
-
-  escritorioId  String   @unique
-  escritorio    Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
-}
-
-// Registro de cada envio. A chave única impede mandar o mesmo alerta duas vezes.
-model AlertaEnviado {
-  id           String   @id @default(cuid())
-  chave        String   @unique
-  tipo         String   // AGENDA | PRAZO | PUBLICACOES | RESUMO | TESTE
-  destino      String   // número em E.164 sem "+"
-  nome         String?
-  ok           Boolean  @default(true)
-  erro         String?
-  createdAt    DateTime @default(now())
-
-  escritorioId String
-  escritorio   Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
-
-  @@index([escritorioId, createdAt])
-}
-
-// Histórico de atividades (auditoria) do escritório.
-model Atividade {
-  id           String   @id @default(cuid())
-  acao         String   // CRIOU | EDITOU | EXCLUIU | CONCLUIU | REABRIU
-  entidade     String   // Processo, Cliente, Prazo...
-  entidadeId   String?
-  descricao    String
-  userId       String?
-  userNome     String
-  createdAt    DateTime @default(now())
-
-  escritorioId String
-  escritorio   Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
-
-  @@index([escritorioId, createdAt])
-}
-
-// Código de recuperação de senha enviado por WhatsApp.
-model RecuperacaoSenha {
-  id         String   @id @default(cuid())
-  userId     String
-  codigoHash String
-  expira     DateTime
-  tentativas Int      @default(0)
-  usado      Boolean  @default(false)
-  createdAt  DateTime @default(now())
-
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-}
-
-// Importação de processos e publicações do DJEN por OAB, em segundo plano.
-model ImportacaoOab {
-  id             String   @id @default(cuid())
-  oab            String
-  uf             String
-  status         String   @default("RODANDO") // RODANDO | CONCLUIDA | ERRO
-  baixadas       Int      @default(0)
-  total          Int      @default(0)
-  processos      Int      @default(0)
-  novos          Int      @default(0)
-  ativos         Int      @default(0)
-  arquivados     Int      @default(0)
-  publicacoes    Int      @default(0)
-  erro           String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  escritorioId   String
-  escritorio     Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
-
-  @@index([escritorioId, createdAt])
 }

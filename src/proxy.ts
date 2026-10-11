@@ -4,17 +4,15 @@ import { sessionSecret as secret } from "@/lib/secret";
 
 const COOKIE_NAME = "genesis_session";
 
-const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/versao"];
+const PUBLIC_PATHS = ["/login", "/api/auth/login"];
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (
-    pathname === "/" || // landing page pública
     PUBLIC_PATHS.some((p) => pathname.startsWith(p)) ||
     pathname.startsWith("/_next") ||
-    pathname.startsWith("/favicon") ||
-    pathname.startsWith("/icon")
+    pathname.startsWith("/favicon")
   ) {
     return NextResponse.next();
   }

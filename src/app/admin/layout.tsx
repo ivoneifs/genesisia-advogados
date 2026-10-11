@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getSession } from "@/lib/session";
 import { logoutAction } from "@/lib/actions/auth";
-import AdminNav from "@/components/admin/admin-nav";
-import { Scale, LogOut, ShieldCheck } from "lucide-react";
+import { Scale, LogOut, ShieldCheck, LayoutDashboard, Building2 } from "lucide-react";
 
 export default async function AdminLayout({
   children,
@@ -14,80 +14,46 @@ export default async function AdminLayout({
   if (session.role !== "SUPERADMIN") redirect("/dashboard");
 
   return (
-    <div className="admin-theme min-h-screen flex bg-[var(--background)]">
-      <aside className="hidden md:flex w-64 shrink-0 flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950 text-white sticky top-0 h-screen">
-        <div className="h-16 flex items-center gap-2.5 px-6 border-b border-white/10 shrink-0">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 shadow-lg shadow-indigo-500/30 flex items-center justify-center">
+    <div className="min-h-screen bg-[var(--background)]">
+      <header className="h-16 border-b border-gray-200 bg-white flex items-center justify-between px-6 lg:px-8">
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-lg bg-[var(--brand)] text-white flex items-center justify-center">
             <Scale size={16} />
           </div>
-          <div className="leading-tight">
-            <p className="font-semibold tracking-tight">Genesis IA</p>
-            <p className="text-[11px] text-white/50">Console administrativo</p>
-          </div>
+          <span className="font-semibold text-gray-900 tracking-tight">
+            Genesis IA
+          </span>
+          <span className="ml-2 inline-flex items-center gap-1 text-xs font-medium text-[var(--brand)] bg-[var(--brand)]/10 rounded-full px-2 py-0.5">
+            <ShieldCheck size={12} /> Administração
+          </span>
         </div>
-
-        <div className="flex-1 px-3 py-5 overflow-y-auto">
-          <p className="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-white/40">
-            Gestão
-          </p>
-          <AdminNav />
+        <div className="flex items-center gap-1">
+          <nav className="flex items-center gap-1 mr-2">
+            <Link
+              href="/admin"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg px-3 py-1.5 transition-colors"
+            >
+              <LayoutDashboard size={15} /> Painel
+            </Link>
+            <Link
+              href="/admin/escritorios"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg px-3 py-1.5 transition-colors"
+            >
+              <Building2 size={15} /> Escritórios
+            </Link>
+          </nav>
+          <form action={logoutAction}>
+            <button
+              type="submit"
+              title="Sair"
+              className="h-9 w-9 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+            >
+              <LogOut size={16} />
+            </button>
+          </form>
         </div>
-
-        <div className="p-3 border-t border-white/10 shrink-0">
-          <div className="flex items-center gap-3 rounded-lg px-3 py-2.5">
-            <div className="h-8 w-8 shrink-0 rounded-full bg-white/10 ring-1 ring-inset ring-white/15 flex items-center justify-center">
-              <ShieldCheck size={15} />
-            </div>
-            <div className="min-w-0 flex-1 leading-tight">
-              <p className="text-sm font-medium truncate">{session.name}</p>
-              <p className="text-[11px] text-white/50 truncate">
-                {session.email}
-              </p>
-            </div>
-            <form action={logoutAction}>
-              <button
-                type="submit"
-                title="Sair"
-                className="h-8 w-8 flex items-center justify-center rounded-lg text-white/60 hover:bg-white/10 hover:text-white transition-colors"
-              >
-                <LogOut size={15} />
-              </button>
-            </form>
-          </div>
-        </div>
-      </aside>
-
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Barra superior no celular (a lateral some abaixo de md) */}
-        <header className="md:hidden bg-gradient-to-r from-slate-950 to-indigo-950 text-white px-4 py-3 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Scale size={16} />
-              <span className="font-semibold tracking-tight">Genesis IA</span>
-              <span className="text-[11px] text-white/50">Admin</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-white/70 max-w-[140px] truncate">
-                {session.name}
-              </span>
-              <form action={logoutAction}>
-                <button
-                  type="submit"
-                  title="Sair"
-                  className="h-8 w-8 flex items-center justify-center rounded-lg text-white/70 hover:bg-white/10"
-                >
-                  <LogOut size={15} />
-                </button>
-              </form>
-            </div>
-          </div>
-          <AdminNav mobile />
-        </header>
-
-        <main className="flex-1 w-full max-w-6xl mx-auto px-4 py-6 md:p-8">
-          {children}
-        </main>
-      </div>
+      </header>
+      <main className="max-w-6xl mx-auto p-6 lg:p-8">{children}</main>
     </div>
   );
 }

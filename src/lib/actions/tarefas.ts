@@ -2,8 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { registrarAtividade } from "@/lib/atividade";
-import { exigir } from "@/lib/usuario";
 import { getSession, requireEscritorioId } from "@/lib/session";
 import { parseInputDateTimeBR } from "@/lib/format";
 import { processoValido } from "@/lib/tenant";
@@ -33,7 +31,6 @@ export async function createTarefa(formData: FormData) {
     },
   });
 
-  await registrarAtividade("CRIOU", "Compromisso", titulo);
   revalidatePath("/agenda");
   revalidatePath("/dashboard");
   if (processoId) revalidatePath(`/processos/${processoId}`);
@@ -50,8 +47,6 @@ export async function toggleTarefa(formData: FormData) {
     where: { id, escritorioId },
     data: { concluida: !concluida },
   });
-  const tarefa = await prisma.tarefa.findFirst({ where: { id, escritorioId }, select: { titulo: true } });
-  if (tarefa) await registrarAtividade(concluida ? "REABRIU" : "CONCLUIU", "Compromisso", tarefa.titulo, id);
 
   revalidatePath("/agenda");
   revalidatePath("/dashboard");
@@ -60,10 +55,8 @@ export async function toggleTarefa(formData: FormData) {
 export async function deleteTarefa(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
-  const { escritorioId } = await exigir("excluir");
-  const alvo = await prisma.tarefa.findFirst({ where: { id, escritorioId }, select: { titulo: true } });
+  const escritorioId = await requireEscritorioId();
   await prisma.tarefa.deleteMany({ where: { id, escritorioId } });
-  if (alvo) await registrarAtividade("EXCLUIU", "Compromisso", alvo.titulo, id);
   revalidatePath("/agenda");
   revalidatePath("/dashboard");
 }
