@@ -4,7 +4,7 @@ import { sessionSecret as secret } from "@/lib/secret";
 
 const COOKIE_NAME = "genesis_session";
 
-const PUBLIC_PATHS = ["/login", "/api/auth/login"];
+const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/versao"];
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
