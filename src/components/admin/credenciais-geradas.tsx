@@ -19,24 +19,24 @@ export default function CredenciaisGeradas({
   }
 
   return (
-    <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 space-y-2">
-      <p className="text-xs font-medium text-emerald-800 flex items-center gap-1.5">
-        <KeyRound size={13} /> Credenciais geradas — copie agora, não serão
-        mostradas de novo
+    <div className="rounded-lg bg-emerald-50 ring-1 ring-inset ring-emerald-200 px-4 py-3 space-y-2.5">
+      <p className="text-xs font-medium text-emerald-800 flex items-center gap-1.5 pr-5">
+        <KeyRound size={13} /> Copie agora: a senha não será mostrada de novo
       </p>
-      <div className="flex items-center justify-between gap-3">
-        <div className="text-sm font-mono text-emerald-900">
-          {email} / {password}
-        </div>
-        <button
-          type="button"
-          onClick={copiar}
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 hover:text-emerald-900 shrink-0"
-        >
-          {copied ? <Check size={13} /> : <Copy size={13} />}
-          {copied ? "Copiado" : "Copiar"}
-        </button>
-      </div>
+      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
+        <dt className="text-emerald-700/70">E-mail</dt>
+        <dd className="font-mono text-emerald-950 break-all">{email}</dd>
+        <dt className="text-emerald-700/70">Senha</dt>
+        <dd className="font-mono text-emerald-950 break-all">{password}</dd>
+      </dl>
+      <button
+        type="button"
+        onClick={copiar}
+        className="inline-flex items-center gap-1.5 rounded-md bg-white ring-1 ring-inset ring-emerald-200 px-2.5 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
+      >
+        {copied ? <Check size={13} /> : <Copy size={13} />}
+        {copied ? "Copiado" : "Copiar credenciais"}
+      </button>
     </div>
   );
 }
