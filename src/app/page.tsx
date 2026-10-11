@@ -131,7 +131,11 @@ const FAQ = [
   },
   {
     p: "O que acontece depois dos 14 dias?",
-    r: "Você escolhe um plano para continuar. Se não quiser seguir, é só não contratar: não há cobrança automática, porque não pedimos cartão no teste.",
+    r: "Para continuar, você contrata o Plano Pro. Se não quiser seguir, é só não contratar: não há cobrança automática, porque não pedimos cartão no teste.",
+  },
+  {
+    p: "Como funciona o pagamento do Plano Pro?",
+    r: "São R$ 4.000 em pagamento único, com 12 meses de suporte total incluídos. A partir do 13º mês, o contrato segue com mensalidade de R$ 500.",
   },
 ];
 
@@ -154,6 +158,7 @@ export default async function Home() {
             <div className="hidden md:flex items-center gap-7 text-sm text-[var(--lp-mute)]">
               <a href="#recursos" className="hover:text-white transition-colors">Recursos</a>
               <a href="#como-funciona" className="hover:text-white transition-colors">Como funciona</a>
+              <a href="#planos" className="hover:text-white transition-colors">Planos</a>
               <a href="#seguranca" className="hover:text-white transition-colors">Segurança</a>
               <a href="#faq" className="hover:text-white transition-colors">Dúvidas</a>
             </div>
@@ -423,6 +428,101 @@ export default async function Home() {
               </div>
             </div>
           </Reveal>
+        </div>
+      </section>
+
+      {/* PLANOS */}
+      <section id="planos" className="scroll-mt-24 pb-28">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8">
+          <Reveal className="text-center">
+            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[var(--lp-signal)]">Planos</p>
+            <h2 className="mt-5 font-[family-name:var(--font-serif)] text-[clamp(2.2rem,4.5vw,3.6rem)] leading-[1.02]">
+              Um investimento,
+              <em className="text-white/40"> um ano inteiro de tranquilidade.</em>
+            </h2>
+          </Reveal>
+          <div className="mx-auto mt-16 grid max-w-5xl gap-6 lg:grid-cols-[0.85fr_1.15fr]">
+            <Reveal>
+              <div className="flex h-full flex-col rounded-3xl border border-white/[0.08] bg-[#07080d] p-8">
+                <p className="text-sm font-medium text-white/70">Teste grátis</p>
+                <p className="mt-6 flex items-baseline gap-2">
+                  <span className="font-[family-name:var(--font-serif)] text-6xl">R$ 0</span>
+                  <span className="text-[var(--lp-mute)]">por 14 dias</span>
+                </p>
+                <p className="mt-3 text-sm text-[var(--lp-mute)]">
+                  Use o sistema completo com os seus processos antes de decidir.
+                </p>
+                <ul className="mt-8 space-y-3 text-sm text-white/80">
+                  {["Todos os recursos liberados", "Sem cartão de crédito", "Sem cobrança automática"].map((t) => (
+                    <li key={t} className="flex items-center gap-3">
+                      <Check size={16} className="text-white/50" /> {t}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href={CADASTRO}
+                  className="mt-auto pt-10"
+                >
+                  <span className="flex items-center justify-center gap-2 rounded-2xl border border-white/15 px-6 py-3.5 font-medium text-white transition hover:border-white/30 hover:bg-white/[0.04]">
+                    Começar grátis <ArrowRight size={16} />
+                  </span>
+                </Link>
+              </div>
+            </Reveal>
+            <Reveal delay={120}>
+              <div className="relative h-full overflow-hidden rounded-3xl border border-[var(--lp-indigo)]/50 bg-gradient-to-b from-[#12123a] to-[#07080d] p-8 shadow-[0_40px_120px_-30px_rgba(109,106,254,0.6)]">
+                <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[var(--lp-indigo)]/30 blur-3xl" />
+                <div className="relative flex h-full flex-col">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-medium text-[#b9b7ff]">Plano Pro</p>
+                    <span className="rounded-full bg-[var(--lp-signal)] px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-black">
+                      Completo
+                    </span>
+                  </div>
+                  <p className="mt-6 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                    <span className="font-[family-name:var(--font-serif)] text-6xl sm:text-7xl">R$ 4.000</span>
+                    <span className="text-[var(--lp-mute)]">pagamento único</span>
+                  </p>
+                  <p className="mt-2 text-sm text-white/70">
+                    Equivale a <b className="text-white">R$ 333 por mês</b> no primeiro ano, com{" "}
+                    <b className="text-white">12 meses de suporte total</b> incluídos.
+                  </p>
+                  <ul className="mt-8 grid gap-3 text-sm text-white/85 sm:grid-cols-2">
+                    {[
+                      "Publicações do DJEN pela OAB",
+                      "Alertas no WhatsApp",
+                      "Peças com IA e exportação .docx",
+                      "Pesquisa em 396 fontes",
+                      "Agenda, prazos e kanban",
+                      "Financeiro do escritório",
+                      "Equipe com perfis de acesso",
+                      "Suporte total por 12 meses",
+                    ].map((t) => (
+                      <li key={t} className="flex items-start gap-3">
+                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--lp-signal)]/15">
+                          <Check size={12} className="text-[var(--lp-signal)]" strokeWidth={3} />
+                        </span>
+                        {t}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 text-sm text-white/70">
+                    Após o primeiro ano: <b className="text-white">R$ 500/mês</b>, conforme contrato.
+                  </div>
+                  <Link
+                    href={CADASTRO}
+                    className="group mt-8 inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--lp-signal)] px-6 py-4 font-semibold text-black transition hover:shadow-[0_0_50px_rgba(200,255,77,0.45)]"
+                  >
+                    Começar pelo teste grátis
+                    <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" />
+                  </Link>
+                  <p className="mt-3 text-center text-xs text-[var(--lp-mute)]">
+                    Teste 14 dias e contrate o Pro quando estiver pronto.
+                  </p>
+                </div>
+              </div>
+            </Reveal>
+          </div>
         </div>
       </section>
 
