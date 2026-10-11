@@ -4,6 +4,7 @@ import { formatDate } from "@/lib/format";
 import { Plus, RefreshCw, Search, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import ProcessosToolbar from "@/components/processos-toolbar";
 import ImportarOabForm from "@/components/importar-oab-form";
+import { ultimaImportacao } from "@/lib/importacao-oab";
 import { requireEscritorioId } from "@/lib/session";
 import { parseAdvogados, formatOab } from "@/lib/advogados";
 import { STATUS_INATIVOS, whereProcessos } from "@/lib/processos-filtro";
@@ -68,7 +69,7 @@ export default async function ProcessosPage({
         </div>
       </div>
 
-      <ImportarOabForm />
+      <ImportarOabForm inicial={await ultimaImportacao(escritorioId)} />
 
       <form className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[220px]">

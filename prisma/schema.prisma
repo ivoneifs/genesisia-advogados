@@ -30,6 +30,7 @@ model Escritorio {
   atendimentos Atendimento[]
 
   configWhatsapp ConfigWhatsapp?
+  importacoes     ImportacaoOab[]
   atividades      Atividade[]
   alertasEnviados AlertaEnviado[]
 }
@@ -327,4 +328,27 @@ model RecuperacaoSenha {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// Importação de processos e publicações do DJEN por OAB, em segundo plano.
+model ImportacaoOab {
+  id             String   @id @default(cuid())
+  oab            String
+  uf             String
+  status         String   @default("RODANDO") // RODANDO | CONCLUIDA | ERRO
+  baixadas       Int      @default(0)
+  total          Int      @default(0)
+  processos      Int      @default(0)
+  novos          Int      @default(0)
+  ativos         Int      @default(0)
+  arquivados     Int      @default(0)
+  publicacoes    Int      @default(0)
+  erro           String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  escritorioId   String
+  escritorio     Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
+
+  @@index([escritorioId, createdAt])
 }

@@ -69,7 +69,7 @@ const RECURSOS = [
   {
     icon: Sparkles,
     titulo: "Peças com IA",
-    texto: "Mais de 100 modelos e geração assistida, com exportação para Word (.docx).",
+    texto: "200 modelos em 10 áreas e geração assistida, com exportação para Word (.docx).",
   },
   {
     icon: Kanban,
@@ -388,7 +388,7 @@ export default async function Home() {
             </p>
             <ul className="mt-8 space-y-3">
               {[
-                "Mais de 100 modelos de peças prontos para adaptar",
+                "200 modelos de peças em 10 áreas do direito",
                 "Exportação para .docx com o advogado que assina",
                 "Pesquisa organizada em 396 fontes públicas",
               ].map((t) => (
@@ -500,7 +500,7 @@ export default async function Home() {
                     {[
                       "Publicações do DJEN pela OAB",
                       "Alertas no WhatsApp",
-                      "Peças com IA e exportação .docx",
+                      "200 peças com IA e exportação .docx",
                       "Pesquisa em 396 fontes",
                       "Agenda, prazos e kanban",
                       "Financeiro do escritório",
