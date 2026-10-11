@@ -3,8 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { registrarAtividade } from "@/lib/atividade";
-import { exigir } from "@/lib/usuario";
 import { requireEscritorioId } from "@/lib/session";
 
 export async function createContato(formData: FormData) {
@@ -54,9 +52,7 @@ export async function updateContato(id: string, formData: FormData) {
 export async function deleteContato(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
-  const { escritorioId } = await exigir("excluir");
-  const alvo = await prisma.contato.findFirst({ where: { id, escritorioId }, select: { nome: true } });
+  const escritorioId = await requireEscritorioId();
   await prisma.contato.deleteMany({ where: { id, escritorioId } });
-  if (alvo) await registrarAtividade("EXCLUIU", "Contato", alvo.nome, id);
   revalidatePath("/contatos");
 }

@@ -3,8 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { registrarAtividade } from "@/lib/atividade";
-import { exigir } from "@/lib/usuario";
 import { runWorkflows } from "@/lib/workflows";
 import { requireEscritorioId } from "@/lib/session";
 import { processoValido } from "@/lib/tenant";
@@ -133,10 +131,8 @@ export async function marcarPaginaTratada(formData: FormData) {
 export async function deletePublicacao(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
-  const { escritorioId } = await exigir("excluir");
-  const alvo = await prisma.publicacao.findFirst({ where: { id, escritorioId }, select: { diario: true } });
+  const escritorioId = await requireEscritorioId();
   await prisma.publicacao.deleteMany({ where: { id, escritorioId } });
-  if (alvo) await registrarAtividade("EXCLUIU", "Publicação", `Publicação${alvo.diario ? ` (${alvo.diario})` : ""}`, id);
   revalidatePath("/publicacoes");
   if (formData.get("voltar")) redirect(voltar(formData));
 }

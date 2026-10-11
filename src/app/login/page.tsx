@@ -1,25 +1,11 @@
 "use client";
 
-import { Suspense, useActionState, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useActionState, useState } from "react";
 import { loginAction, registerAction, type AuthState } from "@/lib/actions/auth";
-import Link from "next/link";
-import AuthShell from "@/components/auth-shell";
+import { Scale, Sparkles, CalendarClock, Users2, Wallet } from "lucide-react";
 
 export default function LoginPage() {
-  return (
-    <Suspense>
-      <Login />
-    </Suspense>
-  );
-}
-
-function Login() {
-  // Vindo da landing ("Teste grátis"), abre direto no cadastro.
-  const params = useSearchParams();
-  const [mode, setMode] = useState<"login" | "register">(
-    params.get("cadastro") === "1" ? "register" : "login"
-  );
+  const [mode, setMode] = useState<"login" | "register">("login");
   const [loginState, loginFormAction, loginPending] = useActionState<
     AuthState,
     FormData
@@ -34,7 +20,54 @@ function Login() {
   const action = mode === "login" ? loginFormAction : registerFormAction;
 
   return (
-    <AuthShell>
+    <div className="min-h-screen w-full grid lg:grid-cols-2">
+      <div className="relative hidden lg:flex flex-col justify-between p-12 bg-gradient-to-br from-[var(--brand-dark)] via-[var(--brand)] to-teal-600 text-white overflow-hidden">
+        <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_20%_20%,white,transparent_35%),radial-gradient(circle_at_80%_60%,white,transparent_30%)]" />
+        <div className="relative flex items-center gap-2">
+          <div className="h-10 w-10 rounded-xl bg-white/15 flex items-center justify-center backdrop-blur">
+            <Scale size={22} />
+          </div>
+          <span className="text-xl font-semibold tracking-tight">Genesis IA</span>
+        </div>
+
+        <div className="relative space-y-6">
+          <h1 className="text-4xl font-semibold leading-tight max-w-md">
+            A gestão jurídica que acompanha o ritmo da sua advocacia.
+          </h1>
+          <p className="text-white/80 max-w-md">
+            Processos, prazos, agenda, clientes e financeiro em um só lugar —
+            com destaque inteligente do que exige sua atenção agora.
+          </p>
+          <ul className="space-y-3 pt-2">
+            <li className="flex items-center gap-3 text-white/90">
+              <CalendarClock size={18} /> Prazos e audiências sem risco de perda
+            </li>
+            <li className="flex items-center gap-3 text-white/90">
+              <Users2 size={18} /> Clientes e processos centralizados
+            </li>
+            <li className="flex items-center gap-3 text-white/90">
+              <Wallet size={18} /> Honorários e financeiro sob controle
+            </li>
+            <li className="flex items-center gap-3 text-white/90">
+              <Sparkles size={18} /> Painel inteligente prioriza o que importa
+            </li>
+          </ul>
+        </div>
+
+        <p className="relative text-sm text-white/60">
+          © {new Date().getFullYear()} Genesis IA — gestão jurídica inteligente.
+        </p>
+      </div>
+
+      <div className="flex items-center justify-center p-8">
+        <div className="w-full max-w-sm space-y-8">
+          <div className="lg:hidden flex items-center gap-2 mb-4">
+            <div className="h-9 w-9 rounded-xl bg-[var(--brand)] text-white flex items-center justify-center">
+              <Scale size={18} />
+            </div>
+            <span className="text-lg font-semibold">Genesis IA</span>
+          </div>
+
           <div>
             <h2 className="text-2xl font-semibold text-gray-900">
               {mode === "login" ? "Entrar na sua conta" : "Criar conta do escritório"}
@@ -57,7 +90,7 @@ function Login() {
                     name="escritorioNome"
                     type="text"
                     required
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent"
                     placeholder="Silva Advogados Associados"
                   />
                 </div>
@@ -69,7 +102,7 @@ function Login() {
                     name="name"
                     type="text"
                     required
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent"
                     placeholder="Dra. Maria Silva"
                   />
                 </div>
@@ -83,26 +116,19 @@ function Login() {
                 name="email"
                 type="email"
                 required
-                className="w-full rounded-lg border border-slate-200 px-3 py-2.5 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent"
                 placeholder="voce@escritorio.com.br"
               />
             </div>
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-sm font-medium text-gray-700">
-                  Senha
-                </label>
-                {mode === "login" && (
-                  <Link href="/login/recuperar" className="text-xs font-medium text-indigo-600 hover:underline">
-                    Esqueci minha senha
-                  </Link>
-                )}
-              </div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Senha
+              </label>
               <input
                 name="password"
                 type="password"
                 required
-                className="w-full rounded-lg border border-slate-200 px-3 py-2.5 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent"
                 placeholder="••••••••"
               />
             </div>
@@ -116,7 +142,7 @@ function Login() {
             <button
               type="submit"
               disabled={pending}
-              className="w-full rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-sm shadow-indigo-500/25 transition-colors text-white font-medium py-2.5 text-sm disabled:opacity-60"
+              className="w-full rounded-lg bg-[var(--brand)] hover:bg-[var(--brand-dark)] transition-colors text-white font-medium py-2.5 text-sm disabled:opacity-60"
             >
               {pending
                 ? "Aguarde..."
@@ -132,7 +158,7 @@ function Login() {
                 Ainda não tem conta?{" "}
                 <button
                   onClick={() => setMode("register")}
-                  className="text-indigo-600 font-medium hover:underline"
+                  className="text-[var(--brand)] font-medium hover:underline"
                 >
                   Cadastre-se
                 </button>
@@ -142,13 +168,15 @@ function Login() {
                 Já tem conta?{" "}
                 <button
                   onClick={() => setMode("login")}
-                  className="text-indigo-600 font-medium hover:underline"
+                  className="text-[var(--brand)] font-medium hover:underline"
                 >
                   Entrar
                 </button>
               </>
             )}
           </p>
-    </AuthShell>
+        </div>
+      </div>
+    </div>
   );
 }

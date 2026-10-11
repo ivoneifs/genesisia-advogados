@@ -7,7 +7,7 @@ import { createPrazo, deletePrazo, togglePrazoStatus } from "@/lib/actions/prazo
 import { deleteProcesso } from "@/lib/actions/processos";
 import { requireEscritorioId } from "@/lib/session";
 import { parseAdvogados, formatOab } from "@/lib/advogados";
-import { Pencil, Trash2, Plus, CheckCircle2, Circle, Sparkles } from "lucide-react";
+import { Pencil, Trash2, Plus, CheckCircle2, Circle } from "lucide-react";
 
 export default async function ProcessoDetalhePage({
   params,
@@ -51,13 +51,7 @@ export default async function ProcessoDetalhePage({
             </Link>
           </p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Link
-            href={`/pecas?processo=${processo.id}`}
-            className="inline-flex items-center gap-2 rounded-lg bg-[var(--brand)] hover:bg-[var(--brand-dark)] text-white text-sm font-medium px-4 py-2.5 transition-colors"
-          >
-            <Sparkles size={14} /> Gerar peça
-          </Link>
+        <div className="flex items-center gap-2">
           <Link
             href={`/processos/${processo.id}/editar`}
             className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm font-medium px-4 py-2.5 transition-colors"

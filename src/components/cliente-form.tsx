@@ -71,16 +71,6 @@ export default function ClienteForm({
           />
         </div>
 
-        <label className="sm:col-span-2 flex items-center gap-2 text-sm text-gray-700">
-          <input
-            type="checkbox"
-            name="receberWhatsapp"
-            defaultChecked={cliente?.receberWhatsapp ?? true}
-            className="h-4 w-4 rounded border-gray-300 accent-[var(--brand)]"
-          />
-          Receber lembretes de audiências e reuniões no WhatsApp
-        </label>
-
         <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Endereço

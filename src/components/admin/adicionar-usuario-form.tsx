@@ -21,52 +21,36 @@ export default function AdicionarUsuarioForm({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 -mx-2 text-sm font-medium text-[var(--brand)] hover:bg-[var(--brand)]/5"
+        className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--brand)] hover:underline"
       >
-        <UserPlus size={15} /> Adicionar usuário
+        <UserPlus size={13} /> Adicionar usuário
       </button>
     );
   }
 
   return (
-    <form action={formAction} className="space-y-2">
+    <form action={formAction} className="space-y-2 rounded-lg bg-gray-50 p-3">
       <input type="hidden" name="escritorioId" value={escritorioId} />
       <div className="flex flex-wrap gap-2">
         <input
           name="name"
           required
           placeholder="Nome"
-          className="flex-1 min-w-[140px] rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40 focus:border-[var(--brand)]"
+          className="flex-1 min-w-[140px] rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
         />
         <input
           type="email"
           name="email"
           required
           placeholder="E-mail"
-          className="flex-1 min-w-[180px] rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40 focus:border-[var(--brand)]"
+          className="flex-1 min-w-[180px] rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
         />
-        <select
-          name="role"
-          defaultValue="ADVOGADO"
-          className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
-        >
-          <option value="SOCIO">Sócio / admin</option>
-          <option value="ADVOGADO">Advogado(a)</option>
-          <option value="ESTAGIARIO">Estagiário(a)</option>
-        </select>
         <button
           type="submit"
           disabled={pending}
-          className="rounded-lg bg-[var(--brand)] hover:bg-[var(--brand-dark)] text-white text-sm font-medium px-3 py-1.5 shadow-sm disabled:opacity-60"
+          className="rounded-lg bg-[var(--brand)] hover:bg-[var(--brand-dark)] text-white text-xs font-medium px-3 py-1.5 disabled:opacity-60"
         >
-          {pending ? "Adicionando..." : "Adicionar"}
-        </button>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-slate-200/60"
-        >
-          Cancelar
+          {pending ? "..." : "Adicionar"}
         </button>
       </div>
       {state && "error" in state && (

@@ -1,8 +1,6 @@
 import { prisma } from "@/lib/db";
 import { formatCurrency } from "@/lib/format";
 import { requireEscritorioId } from "@/lib/session";
-import { usuarioAtual } from "@/lib/usuario";
-import { pode } from "@/lib/papeis";
 
 function Bar({
   label,
@@ -36,7 +34,6 @@ function Bar({
 
 export default async function IndicadoresPage() {
   const escritorioId = await requireEscritorioId();
-  const verFinanceiro = pode((await usuarioAtual())?.role, "financeiro");
   const [
     porArea,
     porStatus,
@@ -94,14 +91,12 @@ export default async function IndicadoresPage() {
             {totalPrazos}
           </p>
         </div>
-        {verFinanceiro && (
         <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <p className="text-sm text-gray-500">Saldo financeiro</p>
-            <p className="mt-2 text-2xl font-semibold text-gray-900">
-              {formatCurrency(receitaPaga - despesaPaga)}
-            </p>
-          </div>
-        )}
+          <p className="text-sm text-gray-500">Saldo financeiro</p>
+          <p className="mt-2 text-2xl font-semibold text-gray-900">
+            {formatCurrency(receitaPaga - despesaPaga)}
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -159,7 +154,6 @@ export default async function IndicadoresPage() {
           </div>
         </div>
 
-        {verFinanceiro && (
         <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-4">
           <h2 className="font-medium text-gray-900">Financeiro</h2>
           <div className="space-y-3">
@@ -186,7 +180,6 @@ export default async function IndicadoresPage() {
             />
           </div>
         </div>
-        )}
       </div>
     </div>
   );

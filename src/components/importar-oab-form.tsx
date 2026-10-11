@@ -2,53 +2,22 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { DownloadCloud, Loader2, UserRound, ExternalLink, UserPlus, CheckCircle2, AlertTriangle } from "lucide-react";
+import { DownloadCloud, Loader2, UserRound, ExternalLink, UserPlus } from "lucide-react";
 import {
-  iniciarImportacaoOab,
-  statusImportacaoOab,
+  importarProcessosPorOab,
   consultarAdvogadoOab,
-  type IniciarImportacaoState,
-  type ImportacaoResumo,
+  type ImportOabState,
   type AdvogadoOabResult,
 } from "@/lib/actions/oab";
 import { UFS } from "@/lib/djen";
 
 const CNA_URL = "https://cna.oab.org.br/";
 
-export default function ImportarOabForm({ inicial }: { inicial: ImportacaoResumo | null }) {
-  const router = useRouter();
-  const [state, formAction, pending] = useActionState<IniciarImportacaoState, FormData>(
-    iniciarImportacaoOab,
+export default function ImportarOabForm() {
+  const [state, formAction, pending] = useActionState<ImportOabState, FormData>(
+    importarProcessosPorOab,
     undefined
   );
-  const [imp, setImp] = useState<ImportacaoResumo | null>(inicial);
-  const [stateAntes, setStateAntes] = useState<IniciarImportacaoState>(undefined);
-
-  // Ao iniciar, passa a acompanhar a importação devolvida pelo servidor.
-  if (state !== stateAntes) {
-    setStateAntes(state);
-    if (state && "id" in state) {
-      setImp({
-        id: state.id, oab: "", uf: "", status: "RODANDO", baixadas: 0, total: 0, processos: 0,
-        novos: 0, ativos: 0, arquivados: 0, publicacoes: 0, erro: null,
-      });
-    }
-  }
-
-  // Enquanto roda: consulta o progresso a cada 3s e atualiza a lista no fim.
-  const idRodando = imp?.status === "RODANDO" ? imp.id : null;
-  useEffect(() => {
-    if (!idRodando) return;
-    const t = setInterval(async () => {
-      const r = await statusImportacaoOab(idRodando);
-      if (!r) return;
-      setImp(r);
-      if (r.status !== "RODANDO") router.refresh();
-    }, 3000);
-    return () => clearInterval(t);
-  }, [idRodando, router]);
-  const rodando = imp?.status === "RODANDO";
 
   // Consulta automática dos dados do advogado ao digitar OAB + UF.
   const [numeroOab, setNumeroOab] = useState("");
@@ -90,9 +59,9 @@ export default function ImportarOabForm({ inicial }: { inicial: ImportacaoResumo
             Importar processos pela OAB
           </p>
           <p className="text-xs text-gray-500 mt-0.5">
-            Traz do Diário de Justiça Eletrônico Nacional (CNJ) todos os processos e
-            publicações do advogado, marca cada processo como Ativo ou Arquivado
-            (DataJud) e cadastra o advogado.
+            Busca no Diário de Justiça Eletrônico Nacional (CNJ) os processos
+            do advogado e marca cada um como Ativo ou Inativo (baixado ou
+            arquivado, conforme o DataJud do CNJ).
           </p>
         </div>
         <div>
@@ -132,15 +101,15 @@ export default function ImportarOabForm({ inicial }: { inicial: ImportacaoResumo
         </div>
         <button
           type="submit"
-          disabled={pending || rodando}
+          disabled={pending}
           className="inline-flex items-center gap-2 rounded-lg bg-[var(--brand)] hover:bg-[var(--brand-dark)] disabled:opacity-60 text-white text-sm font-medium px-4 py-2 transition-colors"
         >
-          {pending || rodando ? (
+          {pending ? (
             <Loader2 size={15} className="animate-spin" />
           ) : (
             <DownloadCloud size={15} />
           )}
-          {pending ? "Iniciando..." : rodando ? "Importando..." : "Importar todos os processos"}
+          {pending ? "Buscando (até 1 min)..." : "Buscar processos"}
         </button>
       </form>
 
@@ -222,57 +191,37 @@ export default function ImportarOabForm({ inicial }: { inicial: ImportacaoResumo
       {state && "error" in state && (
         <p className="px-5 pb-4 text-sm text-red-600">{state.error}</p>
       )}
-      {imp && <Progresso imp={imp} />}
-    </div>
-  );
-}
-
-function Progresso({ imp }: { imp: ImportacaoResumo }) {
-  const pct = imp.total ? Math.min(100, Math.round((imp.baixadas / imp.total) * 100)) : 0;
-  const n = (x: number) => x.toLocaleString("pt-BR");
-
-  if (imp.status === "RODANDO") {
-    const baixando = imp.total === 0 || imp.baixadas < imp.total;
-    return (
-      <div className="mx-5 mb-4 rounded-lg border border-[var(--brand)]/20 bg-[var(--brand)]/[0.04] px-4 py-3 space-y-2">
-        <p className="flex items-center gap-2 text-sm font-medium text-gray-900">
-          <Loader2 size={14} className="animate-spin text-[var(--brand)]" />
-          {baixando
-            ? `Baixando publicações do DJEN${imp.oab ? ` (OAB ${imp.oab}/${imp.uf})` : ""}...`
-            : "Conferindo situação no DataJud e gravando os processos..."}
-        </p>
-        <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
-          <div className="h-full rounded-full bg-[var(--brand)] transition-all duration-700" style={{ width: `${baixando ? pct : 100}%` }} />
+      {state && "success" in state && (
+        <div className="px-5 pb-4 text-sm text-gray-700">
+          {state.encontrados === 0 ? (
+            <p>Nenhum processo com publicações encontrado para a OAB {state.oab}.</p>
+          ) : (
+            <p>
+              OAB {state.oab}: <strong>{state.ativos}</strong> processo
+              {state.ativos !== 1 && "s"} ativo{state.ativos !== 1 && "s"}
+              {state.arquivados > 0 && (
+                <> e {state.arquivados} arquivado{state.arquivados !== 1 && "s"}/baixado
+                {state.arquivados !== 1 && "s"}</>
+              )}
+              . {state.novos} novo{state.novos !== 1 && "s"} cadastrado
+              {state.novos !== 1 && "s"} e {state.publicacoes} publicaç
+              {state.publicacoes !== 1 ? "ões" : "ão"} importada
+              {state.publicacoes !== 1 && "s"}.{" "}
+              <Link
+                href="/processos"
+                className="font-medium text-[var(--brand)] underline"
+              >
+                Ver processos
+              </Link>
+              {state.incompleto && (
+                <span className="block text-xs text-amber-600 mt-1">
+                  Por limite do DJEN, vieram só as publicações mais recentes.
+                </span>
+              )}
+            </p>
+          )}
         </div>
-        <p className="text-xs text-gray-500">
-          {imp.total ? `${n(imp.baixadas)} de ${n(imp.total)} comunicações` : "Começando..."} · respeitando o
-          limite do CNJ, pode levar alguns minutos. Você pode sair desta página: a importação continua.
-        </p>
-      </div>
-    );
-  }
-  if (imp.status === "CONCLUIDA") {
-    return (
-      <div className="mx-5 mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 flex gap-2">
-        <CheckCircle2 size={16} className="shrink-0 mt-0.5 text-emerald-600" />
-        <p>
-          OAB {imp.oab}/{imp.uf}: <b>{n(imp.processos)}</b> processos encontrados ({n(imp.ativos)} ativos,{" "}
-          {n(imp.arquivados)} arquivados). <b>{n(imp.novos)}</b> novos cadastrados e{" "}
-          <b>{n(imp.publicacoes)}</b> publicações importadas.{" "}
-          <Link href="/processos" className="font-medium underline">Ver processos</Link>
-          {imp.erro && <span className="block text-xs text-amber-700 mt-1">{imp.erro}</span>}
-        </p>
-      </div>
-    );
-  }
-  return (
-    <div className="mx-5 mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 flex gap-2">
-      <AlertTriangle size={16} className="shrink-0 mt-0.5 text-amber-600" />
-      <p>
-        {imp.status === "INTERROMPIDA"
-          ? "A importação foi interrompida (o sistema pode ter sido atualizado). Clique em Importar de novo: o que já foi gravado não se repete."
-          : `A importação falhou: ${imp.erro ?? "erro desconhecido"}. Tente de novo em instantes.`}
-      </p>
+      )}
     </div>
   );
 }

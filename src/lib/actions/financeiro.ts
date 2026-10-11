@@ -2,8 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { registrarAtividade } from "@/lib/atividade";
-import { exigir } from "@/lib/usuario";
+import { requireEscritorioId } from "@/lib/session";
 import { clienteValido, processoValido } from "@/lib/tenant";
 
 export async function createFinanceiro(formData: FormData) {
@@ -13,7 +12,7 @@ export async function createFinanceiro(formData: FormData) {
   const valor = parseFloat(valorStr);
   if (!descricao || !vencimento || !Number.isFinite(valor)) return;
 
-  const { escritorioId } = await exigir("financeiro");
+  const escritorioId = await requireEscritorioId();
   const clienteOk = await clienteValido(
     String(formData.get("clienteId") ?? "") || null,
     escritorioId
@@ -35,7 +34,6 @@ export async function createFinanceiro(formData: FormData) {
       processoId: processoOk,
     },
   });
-  await registrarAtividade("CRIOU", "Lançamento", `${descricao} (R$ ${valor.toFixed(2).replace(".", ",")})`);
 
   revalidatePath("/financeiro");
   revalidatePath("/dashboard");
@@ -46,14 +44,12 @@ export async function toggleFinanceiroStatus(formData: FormData) {
   const status = String(formData.get("status") ?? "PENDENTE");
   if (!id) return;
 
-  const { escritorioId } = await exigir("financeiro");
+  const escritorioId = await requireEscritorioId();
 
   await prisma.financeiro.updateMany({
     where: { id, escritorioId },
     data: { status: status === "PAGO" ? "PENDENTE" : "PAGO" },
   });
-  const lanc = await prisma.financeiro.findFirst({ where: { id, escritorioId }, select: { descricao: true } });
-  if (lanc) await registrarAtividade(status === "PAGO" ? "REABRIU" : "CONCLUIU", "Lançamento", lanc.descricao, id);
 
   revalidatePath("/financeiro");
   revalidatePath("/dashboard");
@@ -62,10 +58,8 @@ export async function toggleFinanceiroStatus(formData: FormData) {
 export async function deleteFinanceiro(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
-  const { escritorioId } = await exigir("financeiro");
-  const alvo = await prisma.financeiro.findFirst({ where: { id, escritorioId }, select: { descricao: true } });
+  const escritorioId = await requireEscritorioId();
   await prisma.financeiro.deleteMany({ where: { id, escritorioId } });
-  if (alvo) await registrarAtividade("EXCLUIU", "Lançamento", alvo.descricao, id);
   revalidatePath("/financeiro");
   revalidatePath("/dashboard");
 }

@@ -7,10 +7,10 @@ import {
 } from "@/lib/actions/financeiro";
 import Badge from "@/components/badge";
 import { Trash2, Plus, CheckCircle2, Circle } from "lucide-react";
-import { exigirPagina } from "@/lib/usuario";
+import { requireEscritorioId } from "@/lib/session";
 
 export default async function FinanceiroPage() {
-  const { escritorioId } = await exigirPagina("financeiro");
+  const escritorioId = await requireEscritorioId();
   const [lancamentos, clientes, processos, receitas, despesas] =
     await Promise.all([
       prisma.financeiro.findMany({
