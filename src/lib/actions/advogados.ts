@@ -3,10 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { registrarAtividade } from "@/lib/atividade";
 import { requireEscritorioId } from "@/lib/session";
 import { UFS } from "@/lib/djen";
-import { oabEmOutroEscritorio, podeCadastrarOab } from "@/lib/oab-trava";
 
 const texto = (formData: FormData, campo: string) =>
   String(formData.get(campo) ?? "").trim() || null;
@@ -28,29 +26,8 @@ function lerFormulario(formData: FormData) {
   };
 }
 
-export async function createAdvogado(formData: FormData) {
-  const escritorioId = await requireEscritorioId();
-  const dados = lerFormulario(formData);
-  if (!dados) return;
-
-  // Mesma OAB/UF já cadastrada: abre o cadastro existente em vez de duplicar.
-  const existente = await prisma.advogado.findUnique({
-    where: { escritorioId_oab_uf: { escritorioId, oab: dados.oab, uf: dados.uf } },
-    select: { id: true },
-  });
-  if (existente) redirect(`/advogados/${existente.id}/editar?duplicado=1`);
-
-  // Trava: só a primeira OAB é cadastrada pelo escritório; as demais, pelo suporte.
-  if (!(await podeCadastrarOab(escritorioId))) redirect("/advogados?travada=1");
-  if (await oabEmOutroEscritorio(dados.oab, dados.uf, escritorioId)) {
-    redirect("/advogados/novo?emuso=1");
-  }
-
-  await prisma.advogado.create({ data: { ...dados, escritorioId } });
-  await registrarAtividade("CRIOU", "Advogado", `${dados.nome} (OAB ${dados.oab}/${dados.uf})`);
-  revalidatePath("/advogados");
-  redirect("/advogados");
-}
+// O cadastro de advogados e OABs é feito só pelo administrador (painel /admin).
+// O escritório pode atualizar os dados de contato, nunca a OAB.
 
 export async function updateAdvogado(id: string, formData: FormData) {
   const escritorioId = await requireEscritorioId();

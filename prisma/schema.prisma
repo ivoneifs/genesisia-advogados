@@ -16,6 +16,16 @@ model Escritorio {
   trialExpira DateTime?
   createdAt   DateTime  @default(now())
 
+  // Personalização (definida pelo superadmin)
+  nomeTopo     String? // nome exibido no topo do menu
+  logoVersao   String? // presente quando há logo em uploads/logos/<id>
+  logoTipo     String?
+  capaVersao   String? // imagem de capa da Área de trabalho, em uploads/marca
+  capaTipo     String?
+  corPrimaria  String? // #rrggbb
+  corMenu      String? // #rrggbb
+  tamanhoFonte Int     @default(100) // % do tamanho padrão das letras
+
   users        User[]
   advogados    Advogado[]
   clientes     Cliente[]

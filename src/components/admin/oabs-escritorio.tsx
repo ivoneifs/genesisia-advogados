@@ -21,7 +21,7 @@ export default function OabsEscritorio({ escritorioId, oabs }: { escritorioId: s
   return (
     <div className="px-5 py-3 border-t border-slate-100 space-y-2">
       <p className="flex items-center gap-1.5 text-xs font-medium text-gray-600">
-        <Lock size={12} /> OABs vinculadas (travadas)
+        <Lock size={12} /> OABs do escritório (travadas) · repetir a mesma OAB atualiza os dados
       </p>
       <div className="flex flex-wrap gap-2">
         {oabs.map((o) => (
@@ -64,12 +64,16 @@ export default function OabsEscritorio({ escritorioId, oabs }: { escritorioId: s
             </option>
           ))}
         </select>
+        <input name="cpf" placeholder="CPF" className={`${CAMPO} w-36`} />
+        <input name="emailAdv" type="email" placeholder="E-mail" className={`${CAMPO} w-48`} />
+        <input name="telefone" placeholder="Telefone / WhatsApp" className={`${CAMPO} w-44`} />
+        <input name="endereco" placeholder="Endereço profissional" className={`${CAMPO} flex-1 min-w-[220px]`} />
         <button
           type="submit"
           disabled={pending}
           className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-slate-100 disabled:opacity-60"
         >
-          <Plus size={14} /> Vincular OAB
+          <Plus size={14} /> Cadastrar OAB
         </button>
         {state && "error" in state && <span className="text-xs text-red-600">{state.error}</span>}
       </form>

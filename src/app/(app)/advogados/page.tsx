@@ -1,15 +1,10 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireEscritorioId } from "@/lib/session";
-import { SUPORTE_WHATSAPP } from "@/lib/oab-trava";
-import { Plus, Pencil, UserRound, Mail, Phone, ExternalLink, Lock, MessageCircle } from "lucide-react";
+import { SUPORTE_WHATSAPP } from "@/lib/contato";
+import { Pencil, UserRound, Mail, Phone, ExternalLink, Lock, MessageCircle } from "lucide-react";
 
-export default async function AdvogadosPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ travada?: string }>;
-}) {
-  const { travada } = await searchParams;
+export default async function AdvogadosPage() {
   const escritorioId = await requireEscritorioId();
   const advogados = await prisma.advogado.findMany({
     where: { escritorioId },
@@ -25,38 +20,24 @@ export default async function AdvogadosPage({
             Advogados(as) do escritório. Os dados são usados nas peças geradas.
           </p>
         </div>
-        {advogados.length === 0 && (
-          <Link
-            href="/advogados/novo"
-            className="inline-flex items-center gap-2 rounded-lg bg-[var(--brand)] hover:bg-[var(--brand-dark)] text-white text-sm font-medium px-4 py-2.5 transition-colors"
-          >
-            <Plus size={16} /> Cadastrar minha OAB
-          </Link>
-        )}
       </div>
 
-      {advogados.length > 0 && (
-        <div
-          className={`rounded-xl border px-4 py-3 text-sm flex items-start gap-3 ${
-            travada ? "border-amber-200 bg-amber-50 text-amber-800" : "border-gray-200 bg-gray-50 text-gray-600"
-          }`}
+      <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm flex items-start gap-3 text-gray-600">
+        <Lock size={16} className="shrink-0 mt-0.5" />
+        <p className="flex-1">
+          As OABs são cadastradas pelo administrador do Genesis IA e ficam travadas para proteger os
+          dados de outros advogados: não podem ser trocadas nem usadas por outro escritório. Para
+          incluir ou corrigir uma OAB, fale com o suporte.
+        </p>
+        <a
+          href={SUPORTE_WHATSAPP}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 inline-flex items-center gap-1.5 font-medium text-[var(--brand)] hover:underline"
         >
-          <Lock size={16} className="shrink-0 mt-0.5" />
-          <p className="flex-1">
-            A OAB do escritório fica travada para proteger os dados de outros advogados: ela não pode
-            ser trocada nem usada por outro escritório. Para incluir outro advogado(a) da equipe, fale
-            com o suporte.
-          </p>
-          <a
-            href={SUPORTE_WHATSAPP}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0 inline-flex items-center gap-1.5 font-medium text-[var(--brand)] hover:underline"
-          >
-            <MessageCircle size={14} /> Suporte
-          </a>
-        </div>
-      )}
+          <MessageCircle size={14} /> Suporte
+        </a>
+      </div>
 
       <div className="rounded-xl border border-gray-200 bg-white">
         <ul className="divide-y divide-gray-100">
@@ -116,11 +97,7 @@ export default async function AdvogadosPage({
           ))}
           {advogados.length === 0 && (
             <li className="px-5 py-10 text-center text-gray-400 text-sm">
-              Nenhuma OAB cadastrada.{" "}
-              <Link href="/advogados/novo" className="text-[var(--brand)] underline">
-                Cadastre a sua OAB
-              </Link>{" "}
-              para importar seus processos. Depois de salva, ela fica travada no escritório.
+              Nenhuma OAB cadastrada ainda. Peça ao suporte para cadastrar a OAB do escritório.
             </li>
           )}
         </ul>

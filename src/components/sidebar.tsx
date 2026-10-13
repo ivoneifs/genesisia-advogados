@@ -83,16 +83,30 @@ const SECOES: { titulo: string; itens: Item[] }[] = [
   },
 ];
 
-function Logo() {
+/** Marca do escritório no menu (definida pelo admin). */
+export type MarcaMenu = { nomeTopo: string; logoUrl: string | null; corMenu: string | null };
+
+function Logo({ marca }: { marca: MarcaMenu }) {
   return (
     <div className="h-16 flex items-center gap-2.5 px-6 border-b border-white/10 shrink-0">
-      <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 shadow-lg shadow-indigo-500/30 flex items-center justify-center text-white">
-        <Scale size={16} />
-      </div>
-      <span className="font-semibold tracking-tight text-white">Genesis IA</span>
+      {marca.logoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={marca.logoUrl} alt="" className="h-9 w-9 shrink-0 rounded-lg object-contain bg-white/10" />
+      ) : (
+        <div className="h-8 w-8 shrink-0 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 shadow-lg shadow-indigo-500/30 flex items-center justify-center text-white">
+          <Scale size={16} />
+        </div>
+      )}
+      <span className="font-semibold tracking-tight text-white leading-tight line-clamp-2">{marca.nomeTopo}</span>
     </div>
   );
 }
+
+// Cor do menu escolhida pelo admin: degradê da cor para um tom mais escuro.
+const fundoMenu = (marca: MarcaMenu) =>
+  marca.corMenu
+    ? { background: `linear-gradient(180deg, ${marca.corMenu}, color-mix(in srgb, ${marca.corMenu} 65%, black))` }
+    : undefined;
 
 function Navegacao({ papel, onNavegar }: { papel: string; onNavegar?: () => void }) {
   const pathname = usePathname();
@@ -153,17 +167,17 @@ function Navegacao({ papel, onNavegar }: { papel: string; onNavegar?: () => void
 
 const FUNDO = "bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950";
 
-export default function Sidebar({ papel }: { papel: string }) {
+export default function Sidebar({ papel, marca }: { papel: string; marca: MarcaMenu }) {
   return (
-    <aside className={`hidden md:flex w-64 shrink-0 flex-col sticky top-0 h-screen ${FUNDO}`}>
-      <Logo />
+    <aside className={`hidden md:flex w-64 shrink-0 flex-col sticky top-0 h-screen ${FUNDO}`} style={fundoMenu(marca)}>
+      <Logo marca={marca} />
       <Navegacao papel={papel} />
     </aside>
   );
 }
 
 /** Botão de menu + gaveta lateral para telas pequenas. */
-export function MenuCelular({ papel }: { papel: string }) {
+export function MenuCelular({ papel, marca }: { papel: string; marca: MarcaMenu }) {
   const [aberto, setAberto] = useState(false);
 
   // Trava a rolagem do fundo enquanto o menu está aberto (cada link fecha o menu).
@@ -187,7 +201,7 @@ export function MenuCelular({ papel }: { papel: string }) {
       {aberto && createPortal(
         <div className="md:hidden fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" onClick={() => setAberto(false)} />
-          <aside className={`relative w-72 max-w-[85vw] h-full flex flex-col shadow-2xl ${FUNDO}`}>
+          <aside className={`relative w-72 max-w-[85vw] h-full flex flex-col shadow-2xl ${FUNDO}`} style={fundoMenu(marca)}>
             <button
               type="button"
               onClick={() => setAberto(false)}
@@ -196,7 +210,7 @@ export function MenuCelular({ papel }: { papel: string }) {
             >
               <X size={18} />
             </button>
-            <Logo />
+            <Logo marca={marca} />
             <Navegacao papel={papel} onNavegar={() => setAberto(false)} />
           </aside>
         </div>,

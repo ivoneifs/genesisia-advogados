@@ -6,11 +6,10 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { createSession, destroySession } from "@/lib/session";
 import { rateLimit, rateLimitReset } from "@/lib/rate-limit";
-import { motivoBloqueio, novoTrialExpira } from "@/lib/acesso";
+import { motivoBloqueio } from "@/lib/acesso";
 
 export type AuthState = { error?: string } | undefined;
 
-const SENHA_MINIMA = 8;
 
 async function clientKey(suffix: string): Promise<string> {
   const h = await headers();
@@ -81,57 +80,8 @@ export async function loginAction(
   redirect(destino ?? "/dashboard");
 }
 
-export async function registerAction(
-  _prevState: AuthState,
-  formData: FormData
-): Promise<AuthState> {
-  const name = String(formData.get("name") ?? "").trim();
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const password = String(formData.get("password") ?? "");
-  const escritorioNome = String(formData.get("escritorioNome") ?? "").trim();
-
-  if (!name || !email || !password || !escritorioNome) {
-    return { error: "Preencha todos os campos." };
-  }
-  if (password.length < SENHA_MINIMA) {
-    return { error: `A senha deve ter pelo menos ${SENHA_MINIMA} caracteres.` };
-  }
-
-  try {
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) return { error: "Já existe uma conta com este e-mail." };
-
-    const hashed = await bcrypt.hash(password, 10);
-
-    const escritorio = await prisma.escritorio.create({
-      data: {
-        nome: escritorioNome,
-        plano: "TRIAL",
-        status: "TRIAL",
-        trialExpira: novoTrialExpira(),
-      },
-    });
-
-    const user = await prisma.user.create({
-      data: { name, email, password: hashed, escritorioId: escritorio.id, role: "SOCIO" },
-    });
-
-    await createSession({
-      userId: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      escritorioId: user.escritorioId,
-    });
-  } catch (err) {
-    console.error("[register] erro inesperado:", err);
-    return {
-      error: "Não foi possível criar a conta agora. Tente novamente em instantes.",
-    };
-  }
-
-  redirect("/dashboard");
-}
+// Não há autocadastro: escritórios, usuários e OABs são cadastrados pelo
+// administrador (painel /admin), com os dados passados pelo advogado.
 
 export async function logoutAction() {
   await destroySession();

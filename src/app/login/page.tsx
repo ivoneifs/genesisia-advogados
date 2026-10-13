@@ -1,10 +1,11 @@
 "use client";
 
-import { Suspense, useActionState, useState } from "react";
+import { Suspense, useActionState } from "react";
 import { useSearchParams } from "next/navigation";
-import { loginAction, registerAction, type AuthState } from "@/lib/actions/auth";
+import { loginAction, type AuthState } from "@/lib/actions/auth";
 import Link from "next/link";
 import AuthShell from "@/components/auth-shell";
+import { whatsapp } from "@/lib/contato";
 
 export default function LoginPage() {
   return (
@@ -14,67 +15,33 @@ export default function LoginPage() {
   );
 }
 
-function Login() {
-  // Vindo da landing ("Teste grátis"), abre direto no cadastro.
-  const params = useSearchParams();
-  const [mode, setMode] = useState<"login" | "register">(
-    params.get("cadastro") === "1" ? "register" : "login"
-  );
-  const [loginState, loginFormAction, loginPending] = useActionState<
-    AuthState,
-    FormData
-  >(loginAction, undefined);
-  const [registerState, registerFormAction, registerPending] = useActionState<
-    AuthState,
-    FormData
-  >(registerAction, undefined);
+// Pedido de acesso: o administrador cadastra o escritório e a OAB.
+const WHATSAPP_ACESSO = whatsapp("Olá! Quero solicitar acesso ao Genesis IA para o meu escritório.");
 
-  const state = mode === "login" ? loginState : registerState;
-  const pending = mode === "login" ? loginPending : registerPending;
-  const action = mode === "login" ? loginFormAction : registerFormAction;
+function Login() {
+  // Vindo da landing ("Teste grátis"): mostra como pedir o acesso.
+  const params = useSearchParams();
+  const pedindoAcesso = params.get("cadastro") === "1";
+  const [state, action, pending] = useActionState<AuthState, FormData>(loginAction, undefined);
 
   return (
     <AuthShell>
           <div>
-            <h2 className="text-2xl font-semibold text-gray-900">
-              {mode === "login" ? "Entrar na sua conta" : "Criar conta do escritório"}
-            </h2>
-            <p className="text-sm text-gray-500 mt-1">
-              {mode === "login"
-                ? "Acesse o painel do seu escritório."
-                : "Leva menos de um minuto."}
-            </p>
+            <h2 className="text-2xl font-semibold text-gray-900">Entrar na sua conta</h2>
+            <p className="text-sm text-gray-500 mt-1">Acesse o painel do seu escritório.</p>
           </div>
 
+          {pedindoAcesso && (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+              O acesso é liberado pela nossa equipe, que cadastra o escritório e a sua OAB.{" "}
+              <a href={WHATSAPP_ACESSO} target="_blank" rel="noopener noreferrer" className="font-medium underline">
+                Solicite pelo WhatsApp (74) 98825-9925
+              </a>{" "}
+              e receba o login com 7 dias grátis.
+            </div>
+          )}
+
           <form action={action} className="space-y-4">
-            {mode === "register" && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nome do escritório
-                  </label>
-                  <input
-                    name="escritorioNome"
-                    type="text"
-                    required
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500"
-                    placeholder="Silva Advogados Associados"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nome completo
-                  </label>
-                  <input
-                    name="name"
-                    type="text"
-                    required
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500"
-                    placeholder="Dra. Maria Silva"
-                  />
-                </div>
-              </>
-            )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 E-mail
@@ -92,11 +59,9 @@ function Login() {
                 <label className="block text-sm font-medium text-gray-700">
                   Senha
                 </label>
-                {mode === "login" && (
-                  <Link href="/login/recuperar" className="text-xs font-medium text-indigo-600 hover:underline">
-                    Esqueci minha senha
-                  </Link>
-                )}
+                <Link href="/login/recuperar" className="text-xs font-medium text-indigo-600 hover:underline">
+                  Esqueci minha senha
+                </Link>
               </div>
               <input
                 name="password"
@@ -118,36 +83,15 @@ function Login() {
               disabled={pending}
               className="w-full rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-sm shadow-indigo-500/25 transition-colors text-white font-medium py-2.5 text-sm disabled:opacity-60"
             >
-              {pending
-                ? "Aguarde..."
-                : mode === "login"
-                ? "Entrar"
-                : "Criar conta"}
+              {pending ? "Aguarde..." : "Entrar"}
             </button>
           </form>
 
           <p className="text-center text-sm text-gray-500">
-            {mode === "login" ? (
-              <>
-                Ainda não tem conta?{" "}
-                <button
-                  onClick={() => setMode("register")}
-                  className="text-indigo-600 font-medium hover:underline"
-                >
-                  Cadastre-se
-                </button>
-              </>
-            ) : (
-              <>
-                Já tem conta?{" "}
-                <button
-                  onClick={() => setMode("login")}
-                  className="text-indigo-600 font-medium hover:underline"
-                >
-                  Entrar
-                </button>
-              </>
-            )}
+            Ainda não tem acesso?{" "}
+            <a href={WHATSAPP_ACESSO} target="_blank" rel="noopener noreferrer" className="text-indigo-600 font-medium hover:underline">
+              Solicite pelo WhatsApp
+            </a>
           </p>
     </AuthShell>
   );

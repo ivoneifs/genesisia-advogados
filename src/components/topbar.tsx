@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { LogOut, ChevronDown, UserCog } from "lucide-react";
 import { logoutAction } from "@/lib/actions/auth";
-import { MenuCelular } from "@/components/sidebar";
+import { MenuCelular, type MarcaMenu } from "@/components/sidebar";
+import { BotoesLetras } from "@/components/tamanho-letras";
 import BuscaGlobal from "@/components/busca-global";
 import { PAPEL_LABEL } from "@/lib/papeis";
 
@@ -12,10 +13,14 @@ export default function Topbar({
   name,
   papel,
   escritorioNome,
+  marca,
+  tamanhoFonte,
 }: {
   name: string;
   papel: string;
   escritorioNome?: string;
+  marca: MarcaMenu;
+  tamanhoFonte: number;
 }) {
   const [menu, setMenu] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -39,7 +44,7 @@ export default function Topbar({
   return (
     <header className="h-16 sticky top-0 z-30 border-b border-slate-200/80 bg-white/80 backdrop-blur flex items-center justify-between gap-3 px-4 lg:px-8">
       <div className="flex items-center gap-2 min-w-0">
-        <MenuCelular papel={papel} />
+        <MenuCelular papel={papel} marca={marca} />
         {escritorioNome && (
           <span className="hidden sm:block text-sm font-medium text-gray-500 truncate">
             {escritorioNome}
@@ -49,13 +54,14 @@ export default function Topbar({
 
       <div className="flex items-center gap-2 sm:gap-3">
         <BuscaGlobal />
+        <BotoesLetras padrao={tamanhoFonte} />
         <div className="relative" ref={ref}>
           <button
             type="button"
             onClick={() => setMenu((v) => !v)}
             className="flex items-center gap-2 rounded-lg pl-1 pr-2 py-1 hover:bg-slate-100"
           >
-            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 text-white flex items-center justify-center text-xs font-semibold">
+            <div className="h-8 w-8 rounded-full bg-[var(--brand)] text-white flex items-center justify-center text-xs font-semibold">
               {initials}
             </div>
             <span className="hidden sm:block text-left leading-tight">

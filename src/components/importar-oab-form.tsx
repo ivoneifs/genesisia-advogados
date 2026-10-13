@@ -3,7 +3,8 @@
 import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { DownloadCloud, Loader2, CheckCircle2, AlertTriangle, Lock, UserPlus } from "lucide-react";
+import { DownloadCloud, Loader2, CheckCircle2, AlertTriangle, Lock, MessageCircle } from "lucide-react";
+import { SUPORTE_WHATSAPP } from "@/lib/contato";
 import {
   iniciarImportacaoOab,
   statusImportacaoOab,
@@ -68,12 +69,14 @@ export default function ImportarOabForm({
           </p>
         </div>
         {oabs.length === 0 ? (
-          <Link
-            href="/advogados/novo"
+          <a
+            href={SUPORTE_WHATSAPP}
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-lg bg-[var(--brand)] hover:bg-[var(--brand-dark)] text-white text-sm font-medium px-4 py-2 transition-colors"
           >
-            <UserPlus size={15} /> Cadastrar minha OAB
-          </Link>
+            <MessageCircle size={15} /> Pedir cadastro da OAB
+          </a>
         ) : (
           <>
             <div>

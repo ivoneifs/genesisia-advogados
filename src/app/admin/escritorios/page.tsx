@@ -4,6 +4,7 @@ import { trialExpirado } from "@/lib/acesso";
 import CriarEscritorioForm from "@/components/admin/criar-escritorio-form";
 import EscritorioCard from "@/components/admin/escritorio-card";
 import { PageHeader } from "@/components/admin/ui";
+import { urlImagem } from "@/lib/marca";
 import { Search, Building2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -135,6 +136,14 @@ export default async function AdminEscritoriosPage({
               trialExpirado: trialExpirado(e),
               createdAt: e.createdAt.toISOString(),
               oabs: e.advogados,
+              marca: {
+                nomeTopo: e.nomeTopo,
+                logoUrl: urlImagem(e.id, "logo", e.logoVersao),
+                capaUrl: urlImagem(e.id, "capa", e.capaVersao),
+                corPrimaria: e.corPrimaria,
+                corMenu: e.corMenu,
+                tamanhoFonte: e.tamanhoFonte,
+              },
               users: e.users.map((u) => ({
                 id: u.id,
                 name: u.name,

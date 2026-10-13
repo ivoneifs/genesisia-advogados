@@ -18,10 +18,16 @@ import {
 import { requireEscritorioId } from "@/lib/session";
 import { usuarioAtual } from "@/lib/usuario";
 import { pode } from "@/lib/papeis";
+import { urlImagem } from "@/lib/marca";
 
 export default async function DashboardPage() {
   const escritorioId = await requireEscritorioId();
   const verFinanceiro = pode((await usuarioAtual())?.role, "financeiro");
+  const escritorio = await prisma.escritorio.findUnique({
+    where: { id: escritorioId },
+    select: { capaVersao: true },
+  });
+  const capaUrl = urlImagem(escritorioId, "capa", escritorio?.capaVersao ?? null);
   const now = new Date();
   const in7 = new Date();
   in7.setDate(in7.getDate() + 7);
@@ -104,6 +110,14 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {capaUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={capaUrl}
+          alt=""
+          className="w-full h-32 sm:h-44 object-cover rounded-2xl border border-slate-200/80 shadow-sm"
+        />
+      )}
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">
           Área de trabalho
