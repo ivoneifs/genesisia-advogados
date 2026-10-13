@@ -7,7 +7,7 @@ export type EscritorioAcesso = {
   trialExpira: Date | null;
 };
 
-export const TRIAL_DIAS = 14;
+export const TRIAL_DIAS = 7;
 
 export function trialExpirado(e: EscritorioAcesso): boolean {
   if (e.status !== "TRIAL") return false;

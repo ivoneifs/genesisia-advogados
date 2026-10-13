@@ -135,7 +135,7 @@ function Formulario({ onFechar }: { onFechar: () => void }) {
               <label className={LABEL}>Status inicial</label>
               <select name="status" defaultValue="ATIVO" className={INPUT}>
                 <option value="ATIVO">Ativo</option>
-                <option value="TRIAL">Trial (14 dias)</option>
+                <option value="TRIAL">Trial (7 dias)</option>
                 <option value="SUSPENSO">Suspenso</option>
               </select>
             </div>
