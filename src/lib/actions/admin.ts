@@ -7,6 +7,8 @@ import { getSession } from "@/lib/session";
 import { generatePassword } from "@/lib/generate-password";
 import { novoTrialExpira } from "@/lib/acesso";
 import { papelValido } from "@/lib/papeis";
+import { UFS } from "@/lib/djen";
+import { MSG_OAB_EM_USO, oabEmOutroEscritorio } from "@/lib/oab-trava";
 
 export type AdminState =
   | { error: string }
@@ -254,5 +256,39 @@ export async function alterarPapelUsuario(formData: FormData) {
     where: { id },
     data: { role: papelValido(formData.get("role")) },
   });
+  revalidatePath("/admin/escritorios");
+}
+
+export type OabAdminState = { error: string } | { ok: true } | undefined;
+
+/** Vincula uma OAB a um escritório (só o superadmin passa da trava de OAB). */
+export async function adicionarOabEscritorio(
+  _prev: OabAdminState,
+  formData: FormData
+): Promise<OabAdminState> {
+  await requireSuperadmin();
+  const escritorioId = String(formData.get("escritorioId") ?? "");
+  const nome = String(formData.get("nome") ?? "").trim();
+  const oab = String(formData.get("oab") ?? "").replace(/\D/g, "").replace(/^0+/, "");
+  const uf = String(formData.get("uf") ?? "").toUpperCase();
+  if (!escritorioId || !nome || !oab || oab.length > 7 || !UFS.includes(uf)) {
+    return { error: "Informe nome, número e UF da OAB." };
+  }
+  if (await oabEmOutroEscritorio(oab, uf, escritorioId)) return { error: MSG_OAB_EM_USO };
+  await prisma.advogado.upsert({
+    where: { escritorioId_oab_uf: { escritorioId, oab, uf } },
+    create: { escritorioId, oab, uf, nome },
+    update: { nome, ativo: true },
+  });
+  revalidatePath("/admin/escritorios");
+  return { ok: true };
+}
+
+/** Desvincula a OAB do escritório (libera para ser usada em outro). */
+export async function removerOabEscritorio(formData: FormData) {
+  await requireSuperadmin();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  await prisma.advogado.delete({ where: { id } }).catch(() => null);
   revalidatePath("/admin/escritorios");
 }

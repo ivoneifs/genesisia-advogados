@@ -1,10 +1,15 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireEscritorioId } from "@/lib/session";
-import { deleteAdvogado } from "@/lib/actions/advogados";
-import { Plus, Pencil, Trash2, UserRound, Mail, Phone, ExternalLink } from "lucide-react";
+import { SUPORTE_WHATSAPP } from "@/lib/oab-trava";
+import { Plus, Pencil, UserRound, Mail, Phone, ExternalLink, Lock, MessageCircle } from "lucide-react";
 
-export default async function AdvogadosPage() {
+export default async function AdvogadosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ travada?: string }>;
+}) {
+  const { travada } = await searchParams;
   const escritorioId = await requireEscritorioId();
   const advogados = await prisma.advogado.findMany({
     where: { escritorioId },
@@ -20,13 +25,38 @@ export default async function AdvogadosPage() {
             Advogados(as) do escritório. Os dados são usados nas peças geradas.
           </p>
         </div>
-        <Link
-          href="/advogados/novo"
-          className="inline-flex items-center gap-2 rounded-lg bg-[var(--brand)] hover:bg-[var(--brand-dark)] text-white text-sm font-medium px-4 py-2.5 transition-colors"
-        >
-          <Plus size={16} /> Novo advogado(a)
-        </Link>
+        {advogados.length === 0 && (
+          <Link
+            href="/advogados/novo"
+            className="inline-flex items-center gap-2 rounded-lg bg-[var(--brand)] hover:bg-[var(--brand-dark)] text-white text-sm font-medium px-4 py-2.5 transition-colors"
+          >
+            <Plus size={16} /> Cadastrar minha OAB
+          </Link>
+        )}
       </div>
+
+      {advogados.length > 0 && (
+        <div
+          className={`rounded-xl border px-4 py-3 text-sm flex items-start gap-3 ${
+            travada ? "border-amber-200 bg-amber-50 text-amber-800" : "border-gray-200 bg-gray-50 text-gray-600"
+          }`}
+        >
+          <Lock size={16} className="shrink-0 mt-0.5" />
+          <p className="flex-1">
+            A OAB do escritório fica travada para proteger os dados de outros advogados: ela não pode
+            ser trocada nem usada por outro escritório. Para incluir outro advogado(a) da equipe, fale
+            com o suporte.
+          </p>
+          <a
+            href={SUPORTE_WHATSAPP}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 inline-flex items-center gap-1.5 font-medium text-[var(--brand)] hover:underline"
+          >
+            <MessageCircle size={14} /> Suporte
+          </a>
+        </div>
+      )}
 
       <div className="rounded-xl border border-gray-200 bg-white">
         <ul className="divide-y divide-gray-100">
@@ -45,6 +75,7 @@ export default async function AdvogadosPage() {
                   )}
                 </p>
                 <p className="text-xs text-gray-500">
+                  <Lock size={10} className="inline -mt-0.5 mr-1" />
                   OAB {a.oab}/{a.uf}
                   {a.endereco && ` · ${a.endereco}`}
                 </p>
@@ -80,27 +111,16 @@ export default async function AdvogadosPage() {
                 >
                   <Pencil size={14} />
                 </Link>
-                <form action={deleteAdvogado}>
-                  <input type="hidden" name="id" value={a.id} />
-                  <button
-                    type="submit"
-                    title="Excluir"
-                    className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </form>
               </div>
             </li>
           ))}
           {advogados.length === 0 && (
             <li className="px-5 py-10 text-center text-gray-400 text-sm">
-              Nenhum advogado cadastrado.{" "}
+              Nenhuma OAB cadastrada.{" "}
               <Link href="/advogados/novo" className="text-[var(--brand)] underline">
-                Cadastrar o primeiro
+                Cadastre a sua OAB
               </Link>{" "}
-              ou use a busca por OAB em Processos e clique em &quot;Salvar no
-              cadastro&quot;.
+              para importar seus processos. Depois de salva, ela fica travada no escritório.
             </li>
           )}
         </ul>

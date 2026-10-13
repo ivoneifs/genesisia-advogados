@@ -4,54 +4,18 @@ import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession, requireEscritorioId } from "@/lib/session";
-import { rateLimit } from "@/lib/rate-limit";
-import { consultarAdvogado, UFS } from "@/lib/djen";
+import { UFS } from "@/lib/djen";
 import {
   executarImportacao,
   PARADA_MS,
   resumoImportacao,
   type ImportacaoResumo,
 } from "@/lib/importacao-oab";
+import { MSG_OAB_NAO_VINCULADA, oabDoEscritorio } from "@/lib/oab-trava";
 
 export type { ImportacaoResumo };
 
 const soDigitos = (s: string) => s.replace(/\D/g, "");
-
-export type AdvogadoOabResult =
-  | { error: string }
-  | {
-      nome: string | null;
-      oab: string;
-      uf: string;
-      totalPublicacoes: number;
-      tribunais: string[];
-      ultimaPublicacao: string | null; // ISO
-    };
-
-/** Consulta rápida dos dados do advogado (nome, tribunais, publicações) no DJEN. */
-export async function consultarAdvogadoOab(
-  numeroOabBruto: string,
-  ufBruta: string
-): Promise<AdvogadoOabResult> {
-  const numeroOab = soDigitos(numeroOabBruto);
-  const uf = ufBruta.toUpperCase();
-  if (!numeroOab || numeroOab.length > 7 || !UFS.includes(uf)) {
-    return { error: "Informe o número e a UF da OAB." };
-  }
-
-  const escritorioId = await requireEscritorioId();
-  const rl = rateLimit(`oab-consulta:${escritorioId}`, 8, 60_000);
-  if (!rl.ok) {
-    return { error: `Muitas consultas seguidas. Aguarde ${rl.retryAfterSec}s.` };
-  }
-
-  try {
-    const a = await consultarAdvogado(numeroOab, uf);
-    return { ...a, ultimaPublicacao: a.ultimaPublicacao?.toISOString() ?? null };
-  } catch (e) {
-    return { error: e instanceof Error ? e.message : "Falha ao consultar o DJEN." };
-  }
-}
 
 export type IniciarImportacaoState = { error: string } | { id: string } | undefined;
 
@@ -67,6 +31,9 @@ export async function iniciarImportacaoOab(
 
   const session = await getSession();
   const escritorioId = await requireEscritorioId();
+
+  // Trava: só importa pela OAB vinculada ao escritório.
+  if (!(await oabDoEscritorio(numeroOab, uf, escritorioId))) return { error: MSG_OAB_NAO_VINCULADA };
 
   // Uma importação por vez por escritório (o DJEN limita as consultas).
   const emAndamento = await prisma.importacaoOab.findFirst({

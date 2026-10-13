@@ -12,6 +12,7 @@ import { formatDate, formatDateBR } from "@/lib/format";
 import AdicionarUsuarioForm from "./adicionar-usuario-form";
 import ResetSenhaButton from "./reset-senha-button";
 import ExcluirEscritorio from "./excluir-escritorio";
+import OabsEscritorio, { type OabVinculada } from "./oabs-escritorio";
 import {
   Avatar,
   PlanoTag,
@@ -47,6 +48,7 @@ type Escritorio = {
   trialExpira: string | null;
   trialExpirado: boolean;
   createdAt: string;
+  oabs: OabVinculada[];
   users: Usuario[];
 };
 
@@ -320,6 +322,8 @@ export default function EscritorioCard({
           </li>
         )}
       </ul>
+
+      <OabsEscritorio escritorioId={escritorio.id} oabs={escritorio.oabs} />
 
       <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/50 rounded-b-2xl">
         <AdicionarUsuarioForm escritorioId={escritorio.id} />

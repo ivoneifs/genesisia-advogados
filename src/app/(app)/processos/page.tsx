@@ -69,7 +69,14 @@ export default async function ProcessosPage({
         </div>
       </div>
 
-      <ImportarOabForm inicial={await ultimaImportacao(escritorioId)} />
+      <ImportarOabForm
+        inicial={await ultimaImportacao(escritorioId)}
+        oabs={await prisma.advogado.findMany({
+          where: { escritorioId, ativo: true },
+          select: { oab: true, uf: true, nome: true },
+          orderBy: { nome: "asc" },
+        })}
+      />
 
       <form className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[220px]">

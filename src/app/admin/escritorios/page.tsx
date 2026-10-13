@@ -30,6 +30,7 @@ export default async function AdminEscritoriosPage({
         where: { role: { not: "SUPERADMIN" } },
         orderBy: { createdAt: "asc" },
       },
+      advogados: { orderBy: { nome: "asc" }, select: { id: true, nome: true, oab: true, uf: true } },
     },
   });
 
@@ -133,6 +134,7 @@ export default async function AdminEscritoriosPage({
               trialExpira: e.trialExpira ? e.trialExpira.toISOString() : null,
               trialExpirado: trialExpirado(e),
               createdAt: e.createdAt.toISOString(),
+              oabs: e.advogados,
               users: e.users.map((u) => ({
                 id: u.id,
                 name: u.name,
