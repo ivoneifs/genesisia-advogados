@@ -47,13 +47,14 @@ export const metadata: Metadata = {
   },
 };
 
-const CADASTRO = "/login?cadastro=1";
 
 // WhatsApp de vendas (abre a conversa com a mensagem pronta).
 const whats = (msg: string) => `https://wa.me/5574988259925?text=${encodeURIComponent(msg)}`;
 const WHATSAPP_VENDAS = whats("Olá! Vim pelo site e quero conhecer o Genesis IA.");
 const WHATSAPP_DEMO = whats("Olá! Quero agendar uma demonstração do Genesis IA para o meu escritório.");
 const WHATSAPP_PRO = whats("Olá! Quero contratar o Plano Pro do Genesis IA.");
+// O acesso é liberado pela equipe, que cadastra o escritório e a OAB.
+const WHATSAPP_TESTE = whats("Olá! Quero liberar os 7 dias grátis do Genesis IA para o meu escritório.");
 
 const MODULOS = [
   {
@@ -93,8 +94,8 @@ const MODULOS = [
 ];
 
 const PASSOS = [
-  { n: "01", t: "Crie a conta", d: "Um minuto. 7 dias com tudo liberado, sem cartão de crédito." },
-  { n: "02", t: "Digite a OAB", d: "Processos e publicações entram sozinhos, já organizados." },
+  { n: "01", t: "Peça seu acesso", d: "Chame no WhatsApp. Liberamos 7 dias com tudo incluído, sem cartão de crédito." },
+  { n: "02", t: "Receba com sua OAB", d: "Cadastramos o escritório e a sua OAB. Processos e publicações entram sozinhos." },
   { n: "03", t: "Conecte o WhatsApp", d: "Leia um QR code. Cada prazo vira alerta no celular do responsável." },
 ];
 
@@ -191,9 +192,9 @@ export default async function Home() {
               <Link href="/login" className="hidden px-3 py-2 text-sm text-[var(--nx-mute)] hover:text-white sm:block">
                 Entrar
               </Link>
-              <Link href={CADASTRO} className="nx-btn inline-flex whitespace-nowrap items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold">
-                Teste grátis <ArrowRight size={15} />
-              </Link>
+              <a href={WHATSAPP_TESTE} target="_blank" rel="noopener noreferrer" className="nx-btn inline-flex whitespace-nowrap items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold">
+                7 dias grátis <ArrowRight size={15} />
+              </a>
             </div>
           </nav>
         </div>
@@ -220,9 +221,9 @@ export default async function Home() {
               avisa o advogado certo no WhatsApp. <span className="text-white">Você advoga. A IA vigia.</span>
             </p>
             <div className="lp-rise mt-10 flex flex-col gap-3 sm:flex-row" style={{ animationDelay: "360ms" }}>
-              <Link href={CADASTRO} className="nx-btn inline-flex whitespace-nowrap items-center justify-center gap-2 rounded-xl px-7 py-4 text-base font-semibold">
-                Começar 7 dias grátis <ArrowRight size={18} />
-              </Link>
+              <a href={WHATSAPP_TESTE} target="_blank" rel="noopener noreferrer" className="nx-btn inline-flex whitespace-nowrap items-center justify-center gap-2 rounded-xl px-7 py-4 text-base font-semibold">
+                Liberar 7 dias grátis <ArrowRight size={18} />
+              </a>
               <a
                 href={WHATSAPP_DEMO}
                 target="_blank"
@@ -342,9 +343,9 @@ export default async function Home() {
             ))}
           </div>
           <Reveal className="mt-12 text-center">
-            <Link href={CADASTRO} className="nx-btn inline-flex whitespace-nowrap items-center gap-2 rounded-xl px-7 py-4 font-semibold">
-              Fazer o passo 1 agora <ArrowRight size={18} />
-            </Link>
+            <a href={WHATSAPP_TESTE} target="_blank" rel="noopener noreferrer" className="nx-btn inline-flex whitespace-nowrap items-center gap-2 rounded-xl px-7 py-4 font-semibold">
+              Pedir meu acesso agora <ArrowRight size={18} />
+            </a>
           </Reveal>
         </div>
       </section>
@@ -404,7 +405,7 @@ export default async function Home() {
             <p className="mt-4 text-[var(--nx-mute)]">Ajuste com a realidade do seu escritório.</p>
           </Reveal>
           <Reveal>
-            <Calculadora cadastro={CADASTRO} whatsapp={WHATSAPP_VENDAS} />
+            <Calculadora cadastro={WHATSAPP_TESTE} whatsapp={WHATSAPP_VENDAS} />
           </Reveal>
         </div>
       </section>
@@ -427,7 +428,7 @@ export default async function Home() {
                     { i: Lock, t: "Dados isolados", d: "Cada escritório só acessa os próprios processos, clientes e documentos." },
                     { i: Users, t: "Perfis de acesso", d: "Sócio, advogado e estagiário, cada um com o que precisa ver." },
                     { i: History, t: "Histórico completo", d: "Quem criou, alterou ou excluiu cada registro, com data e hora." },
-                    { i: Fingerprint, t: "Senhas protegidas", d: "Criptografadas, com bloqueio contra tentativas repetidas." },
+                    { i: Fingerprint, t: "OAB travada", d: "Cada OAB pertence a um único escritório: ninguém importa os processos de outro advogado." },
                   ].map((x) => (
                     <div key={x.t} className="border-l border-[var(--nx-cyan)]/25 pl-5">
                       <x.i size={18} className="text-[var(--nx-cyan)]" />
@@ -467,13 +468,12 @@ export default async function Home() {
                     </li>
                   ))}
                 </ul>
-                <Link
-                  href={CADASTRO}
+                <a href={WHATSAPP_TESTE} target="_blank" rel="noopener noreferrer"
                   className="mt-auto flex items-center justify-center gap-2 rounded-xl border border-white/15 px-6 py-3.5 font-medium transition hover:border-[var(--nx-cyan)]/50 hover:bg-[var(--nx-cyan)]/[0.05]"
                   style={{ marginTop: "2.5rem" }}
                 >
                   Começar grátis <ArrowRight size={16} />
-                </Link>
+                </a>
               </div>
             </Reveal>
             <Reveal delay={120}>
@@ -526,12 +526,11 @@ export default async function Home() {
                   >
                     <MessageCircle size={18} /> Contratar pelo WhatsApp
                   </a>
-                  <Link
-                    href={CADASTRO}
+                  <a href={WHATSAPP_TESTE} target="_blank" rel="noopener noreferrer"
                     className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 px-6 py-3.5 font-medium transition hover:border-[var(--nx-cyan)]/50"
                   >
                     Ou testar 7 dias grátis antes <ArrowRight size={16} />
-                  </Link>
+                  </a>
                 </div>
               </div>
             </Reveal>
@@ -592,9 +591,9 @@ export default async function Home() {
                 Configure hoje e receba amanhã o primeiro resumo do dia no WhatsApp.
               </p>
               <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
-                <Link href={CADASTRO} className="nx-btn inline-flex whitespace-nowrap items-center justify-center gap-2 rounded-xl px-8 py-4 text-base font-semibold">
-                  Começar 7 dias grátis <ArrowRight size={18} />
-                </Link>
+                <a href={WHATSAPP_TESTE} target="_blank" rel="noopener noreferrer" className="nx-btn inline-flex whitespace-nowrap items-center justify-center gap-2 rounded-xl px-8 py-4 text-base font-semibold">
+                  Liberar 7 dias grátis <ArrowRight size={18} />
+                </a>
                 <a
                   href={WHATSAPP_DEMO}
                   target="_blank"
@@ -627,9 +626,9 @@ export default async function Home() {
 
       {/* Barra fixa no celular */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--nx-line)] bg-[#02040a]/90 p-3 backdrop-blur-xl sm:hidden">
-        <Link href={CADASTRO} className="nx-btn flex items-center justify-center gap-2 rounded-xl py-3.5 font-semibold">
-          Testar 7 dias grátis <ArrowRight size={17} />
-        </Link>
+        <a href={WHATSAPP_TESTE} target="_blank" rel="noopener noreferrer" className="nx-btn flex items-center justify-center gap-2 rounded-xl py-3.5 font-semibold">
+          Liberar 7 dias grátis <ArrowRight size={17} />
+        </a>
       </div>
 
       {/* RODAPÉ */}
@@ -640,7 +639,7 @@ export default async function Home() {
           </div>
           <div className="flex gap-6">
             <Link href="/login" className="hover:text-white">Entrar</Link>
-            <Link href={CADASTRO} className="hover:text-white">Criar conta</Link>
+            <a href={WHATSAPP_TESTE} target="_blank" rel="noopener noreferrer" className="hover:text-white">Criar conta</a>
             <a href={WHATSAPP_VENDAS} target="_blank" rel="noopener noreferrer" className="hover:text-white">WhatsApp</a>
           </div>
           <p>© {new Date().getFullYear()} Genesis IA</p>

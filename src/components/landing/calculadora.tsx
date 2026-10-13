@@ -115,8 +115,8 @@ export default function Calculadora({ cadastro, whatsapp }: { cadastro: string; 
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">
-          <a href={cadastro} className="nx-btn inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-6 py-3.5 font-semibold">
-            Testar 7 dias grátis <ArrowRight size={17} />
+          <a href={cadastro} target="_blank" rel="noopener noreferrer" className="nx-btn inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-6 py-3.5 font-semibold">
+            Liberar 7 dias grátis <ArrowRight size={17} />
           </a>
           <a
             href={whatsapp}
