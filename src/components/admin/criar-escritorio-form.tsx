@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { UFS } from "@/lib/djen";
 import { createEscritorio, type AdminState } from "@/lib/actions/admin";
 import CredenciaisGeradas from "./credenciais-geradas";
 import { Plus, X, Building2 } from "lucide-react";
@@ -61,8 +62,8 @@ function Formulario({ onFechar }: { onFechar: () => void }) {
           <div>
             <h2 className="font-semibold text-gray-900">Novo escritório</h2>
             <p className="text-xs text-gray-500 mt-0.5">
-              Cria o escritório e o primeiro usuário, com senha gerada
-              automaticamente.
+              Cria o escritório, o primeiro usuário e a OAB do advogado,
+              com os dados passados por ele.
             </p>
           </div>
         </div>
@@ -122,6 +123,34 @@ function Formulario({ onFechar }: { onFechar: () => void }) {
               />
             </div>
           </div>
+          <div>
+            <label className={LABEL}>Senha inicial</label>
+            <input
+              type="text"
+              name="password"
+              minLength={8}
+              autoComplete="new-password"
+              placeholder="Deixe vazio para gerar automaticamente"
+              className={INPUT}
+            />
+          </div>
+          <fieldset className="rounded-xl border border-slate-200 p-4 space-y-3">
+            <legend className="px-1 text-xs font-semibold text-gray-600">OAB do advogado (fica travada no escritório)</legend>
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <input name="adv_nome" placeholder="Nome do advogado(a)" className={`${INPUT} sm:col-span-2`} />
+              <input name="adv_oab" inputMode="numeric" placeholder="Nº OAB" className={INPUT} />
+              <select name="adv_uf" defaultValue="" className={INPUT}>
+                <option value="">UF</option>
+                {UFS.map((uf) => (
+                  <option key={uf} value={uf}>{uf}</option>
+                ))}
+              </select>
+              <input name="adv_cpf" placeholder="CPF" className={INPUT} />
+              <input name="adv_emailAdv" type="email" placeholder="E-mail do advogado" className={INPUT} />
+              <input name="adv_telefone" placeholder="Telefone / WhatsApp" className={`${INPUT} sm:col-span-2`} />
+              <input name="adv_endereco" placeholder="Endereço profissional" className={`${INPUT} sm:col-span-4`} />
+            </div>
+          </fieldset>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={LABEL}>Plano</label>
@@ -135,7 +164,7 @@ function Formulario({ onFechar }: { onFechar: () => void }) {
               <label className={LABEL}>Status inicial</label>
               <select name="status" defaultValue="ATIVO" className={INPUT}>
                 <option value="ATIVO">Ativo</option>
-                <option value="TRIAL">Trial (14 dias)</option>
+                <option value="TRIAL">Trial (7 dias)</option>
                 <option value="SUSPENSO">Suspenso</option>
               </select>
             </div>

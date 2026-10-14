@@ -6,6 +6,8 @@ import Sidebar from "@/components/sidebar";
 import Topbar from "@/components/topbar";
 import AvisoPermissao from "@/components/aviso-permissao";
 import { Suspense } from "react";
+import { marcaDoEscritorio } from "@/lib/marca";
+import { AplicarTamanhoLetras } from "@/components/tamanho-letras";
 
 export default async function AppLayout({
   children,
@@ -29,11 +31,21 @@ export default async function AppLayout({
     redirect("/login?inativo=1");
   }
 
+  const marca = marcaDoEscritorio(user.escritorio);
+  const menu = { nomeTopo: marca.nomeTopo, logoUrl: marca.logoUrl, corMenu: marca.corMenu };
+
   return (
-    <div className="min-h-screen flex bg-[var(--background)]">
-      <Sidebar papel={user.role} />
+    <div className="min-h-screen flex bg-[var(--background)]" style={marca.estilo}>
+      <AplicarTamanhoLetras padrao={marca.tamanhoFonte} />
+      <Sidebar papel={user.role} marca={menu} />
       <div className="flex-1 flex flex-col min-w-0">
-        <Topbar name={user.name} papel={user.role} escritorioNome={user.escritorio.nome} />
+        <Topbar
+          name={user.name}
+          papel={user.role}
+          escritorioNome={user.escritorio.nome}
+          marca={menu}
+          tamanhoFonte={marca.tamanhoFonte}
+        />
         <main className="flex-1 px-4 py-6 sm:p-6 lg:p-8 max-w-[1400px] w-full mx-auto">
           {children}
         </main>

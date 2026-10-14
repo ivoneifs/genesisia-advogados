@@ -12,6 +12,9 @@ import { formatDate, formatDateBR } from "@/lib/format";
 import AdicionarUsuarioForm from "./adicionar-usuario-form";
 import ResetSenhaButton from "./reset-senha-button";
 import ExcluirEscritorio from "./excluir-escritorio";
+import OabsEscritorio, { type OabVinculada } from "./oabs-escritorio";
+import PersonalizarEscritorio, { type MarcaAdmin } from "./personalizar-escritorio";
+import EditarUsuario from "./editar-usuario";
 import {
   Avatar,
   PlanoTag,
@@ -28,6 +31,7 @@ import {
   CalendarDays,
   Users2,
   Clock,
+  Palette,
 } from "lucide-react";
 
 type Usuario = {
@@ -47,6 +51,8 @@ type Escritorio = {
   trialExpira: string | null;
   trialExpirado: boolean;
   createdAt: string;
+  oabs: OabVinculada[];
+  marca: MarcaAdmin;
   users: Usuario[];
 };
 
@@ -65,6 +71,8 @@ export default function EscritorioCard({
 }) {
   const [editando, setEditando] = useState(false);
   const [planoOpen, setPlanoOpen] = useState(false);
+  const [marcaOpen, setMarcaOpen] = useState(false);
+  const [editandoUsuario, setEditandoUsuario] = useState<string | null>(null);
   const bloqueado =
     !escritorio.ativo ||
     escritorio.status === "SUSPENSO" ||
@@ -174,6 +182,14 @@ export default function EscritorioCard({
           >
             <SlidersHorizontal size={15} />
           </button>
+          <button
+            type="button"
+            onClick={() => setMarcaOpen((v) => !v)}
+            title="Personalizar (logo, nome do topo, cores, letras)"
+            className={`${ICON_BTN} ${marcaOpen ? "bg-slate-100 text-gray-700" : ""}`}
+          >
+            <Palette size={15} />
+          </button>
           <ExcluirEscritorio id={escritorio.id} nome={escritorio.nome} />
         </div>
       </div>
@@ -244,8 +260,22 @@ export default function EscritorioCard({
         </form>
       )}
 
+      {marcaOpen && (
+        <PersonalizarEscritorio
+          id={escritorio.id}
+          nome={escritorio.nome}
+          marca={escritorio.marca}
+          onFechar={() => setMarcaOpen(false)}
+        />
+      )}
+
       <ul className="divide-y divide-slate-100 border-t border-slate-100">
-        {escritorio.users.map((u) => (
+        {escritorio.users.map((u) =>
+          editandoUsuario === u.id ? (
+            <li key={u.id}>
+              <EditarUsuario usuario={u} onFechar={() => setEditandoUsuario(null)} />
+            </li>
+          ) : (
           <li
             key={u.id}
             className="px-5 py-3 flex items-center gap-3 hover:bg-slate-50/60"
@@ -295,6 +325,14 @@ export default function EscritorioCard({
                 {u.ativo ? "Ativo" : "Inativo"}
               </button>
             </form>
+            <button
+              type="button"
+              onClick={() => setEditandoUsuario(u.id)}
+              title="Editar nome, login e senha"
+              className={ICON_BTN}
+            >
+              <Pencil size={14} />
+            </button>
             <ResetSenhaButton userId={u.id} />
             <form
               action={deleteUser}
@@ -313,13 +351,16 @@ export default function EscritorioCard({
               </button>
             </form>
           </li>
-        ))}
+          )
+        )}
         {escritorio.users.length === 0 && (
           <li className="px-5 py-4 text-sm text-gray-400">
             Nenhum usuário neste escritório.
           </li>
         )}
       </ul>
+
+      <OabsEscritorio escritorioId={escritorio.id} oabs={escritorio.oabs} />
 
       <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/50 rounded-b-2xl">
         <AdicionarUsuarioForm escritorioId={escritorio.id} />

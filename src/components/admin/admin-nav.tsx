@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Building2 } from "lucide-react";
+import { LayoutDashboard, Building2, UserCog } from "lucide-react";
 
 const NAV = [
   { href: "/admin", label: "Visão geral", icon: LayoutDashboard, exato: true },
   { href: "/admin/escritorios", label: "Escritórios", icon: Building2 },
+  { href: "/admin/conta", label: "Minha conta", icon: UserCog },
 ];
 
 export default function AdminNav({ mobile = false }: { mobile?: boolean }) {

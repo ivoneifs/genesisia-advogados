@@ -45,6 +45,14 @@ export default function AdicionarUsuarioForm({
           placeholder="E-mail"
           className="flex-1 min-w-[180px] rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40 focus:border-[var(--brand)]"
         />
+        <input
+          type="text"
+          name="password"
+          minLength={8}
+          autoComplete="new-password"
+          placeholder="Senha (vazio = gerar)"
+          className="w-44 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40 focus:border-[var(--brand)]"
+        />
         <select
           name="role"
           defaultValue="ADVOGADO"

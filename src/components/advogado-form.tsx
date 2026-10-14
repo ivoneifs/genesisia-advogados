@@ -39,7 +39,9 @@ export default function AdvogadoForm({
             inputMode="numeric"
             defaultValue={advogado?.oab ?? inicial?.oab}
             placeholder="123456"
-            className={campo}
+            readOnly={!!advogado}
+            title={advogado ? "A OAB fica travada depois de cadastrada" : undefined}
+            className={`${campo} ${advogado ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""}`}
           />
         </div>
 
@@ -47,21 +49,31 @@ export default function AdvogadoForm({
           <label className="block text-sm font-medium text-gray-700 mb-1">
             UF
           </label>
-          <select
-            name="uf"
-            required
-            defaultValue={advogado?.uf ?? inicial?.uf ?? ""}
-            className={campo}
-          >
-            <option value="" disabled>
-              UF
-            </option>
-            {UFS.map((uf) => (
-              <option key={uf} value={uf}>
-                {uf}
+          {advogado ? (
+            <input
+              name="uf"
+              readOnly
+              defaultValue={advogado.uf}
+              title="A OAB fica travada depois de cadastrada"
+              className={`${campo} bg-gray-100 text-gray-500 cursor-not-allowed`}
+            />
+          ) : (
+            <select
+              name="uf"
+              required
+              defaultValue={inicial?.uf ?? ""}
+              className={campo}
+            >
+              <option value="" disabled>
+                UF
               </option>
-            ))}
-          </select>
+              {UFS.map((uf) => (
+                <option key={uf} value={uf}>
+                  {uf}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
 
         <div>
