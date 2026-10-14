@@ -5,6 +5,7 @@ import { Chakra_Petch } from "next/font/google";
 import { getSession } from "@/lib/session";
 import RadarHud from "@/components/landing/radar-hud";
 import Calculadora from "@/components/landing/calculadora";
+import VideoTutorial from "@/components/landing/video-tutorial";
 import Reveal from "@/components/landing/reveal";
 import {
   ArrowRight,
@@ -342,6 +343,12 @@ export default async function Home() {
               </Reveal>
             ))}
           </div>
+          <Reveal className="mt-16">
+            <p className="mb-5 font-mono text-[11px] uppercase tracking-[0.24em] text-[var(--nx-cyan)]">
+              ▶ Tutorial em vídeo · 5 minutos
+            </p>
+            <VideoTutorial />
+          </Reveal>
           <Reveal className="mt-12 text-center">
             <a href={WHATSAPP_TESTE} target="_blank" rel="noopener noreferrer" className="nx-btn inline-flex whitespace-nowrap items-center gap-2 rounded-xl px-7 py-4 font-semibold">
               Pedir meu acesso agora <ArrowRight size={18} />
