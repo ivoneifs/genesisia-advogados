@@ -8,11 +8,24 @@ import { baixarDocx } from "@/lib/exportar-docx";
 import { assinarModelo } from "@/lib/advogados";
 import Link from "next/link";
 import type { Cliente, Processo } from "@prisma/client";
+import { STATUS_INATIVOS } from "@/lib/processos-filtro";
 
 type ProcessoResumo = Pick<
   Processo,
-  "id" | "numero" | "vara" | "tribunal" | "parteContraria" | "clienteId"
+  "id" | "numero" | "status" | "vara" | "tribunal" | "parteContraria" | "clienteId"
 >;
+
+const SITUACOES = [
+  { value: "ATIVO", label: "Ativos" },
+  { value: "INATIVO", label: "Inativos" },
+  { value: "TODOS", label: "Todos" },
+] as const;
+type Situacao = (typeof SITUACOES)[number]["value"];
+
+function situacaoDe(status: string): Situacao {
+  if (status === "ATIVO") return "ATIVO";
+  return STATUS_INATIVOS.includes(status) ? "INATIVO" : "TODOS";
+}
 
 const SUGESTOES_IA = [
   "Notificação de rescisão contratual por inadimplência",
@@ -42,6 +55,23 @@ export default function PecaGenerator({
   const [templateId, setTemplateId] = useState(TEMPLATES[0].id);
   const [clienteId, setClienteId] = useState(inicial?.clienteId ?? "");
   const [processoId, setProcessoId] = useState(inicial?.processoId ?? "");
+  // Vindo de um processo inativo, abre já mostrando os inativos.
+  const [situacao, setSituacao] = useState<Situacao>(() => {
+    const alvo = inicial && processos.find((p) => p.id === inicial.processoId);
+    return alvo ? situacaoDe(alvo.status) : "ATIVO";
+  });
+  const contagem = useMemo(() => {
+    const c = { ATIVO: 0, INATIVO: 0, TODOS: processos.length };
+    for (const p of processos) {
+      const s = situacaoDe(p.status);
+      if (s !== "TODOS") c[s]++;
+    }
+    return c;
+  }, [processos]);
+  const processosFiltrados = useMemo(
+    () => (situacao === "TODOS" ? processos : processos.filter((p) => situacaoDe(p.status) === situacao)),
+    [processos, situacao]
+  );
   const [copied, setCopied] = useState(false);
 
   const [instrucao, setInstrucao] = useState("");
@@ -300,6 +330,33 @@ export default function PecaGenerator({
 
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">
+                Situação dos processos
+              </label>
+              <div className="flex gap-1">
+                {SITUACOES.map((s) => (
+                  <button
+                    key={s.value}
+                    type="button"
+                    onClick={() => {
+                      setSituacao(s.value);
+                      // Some da lista? Limpa a seleção para não gerar peça de processo escondido.
+                      const atual = processos.find((p) => p.id === processoId);
+                      if (atual && s.value !== "TODOS" && situacaoDe(atual.status) !== s.value) setProcessoId("");
+                    }}
+                    className={`flex-1 rounded-lg border px-2 py-1.5 text-xs font-medium transition ${
+                      situacao === s.value
+                        ? "border-[var(--brand)] bg-[var(--brand)] text-white"
+                        : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    {s.label} ({contagem[s.value]})
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">
                 Processo (auto-preenche)
               </label>
               <select
@@ -313,7 +370,7 @@ export default function PecaGenerator({
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
               >
                 <option value="">—</option>
-                {processos.map((p) => (
+                {processosFiltrados.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.numero}
                   </option>
