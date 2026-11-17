@@ -12,7 +12,7 @@ import { STATUS_INATIVOS } from "@/lib/processos-filtro";
 
 type ProcessoResumo = Pick<
   Processo,
-  "id" | "numero" | "status" | "vara" | "tribunal" | "parteContraria" | "clienteId"
+  "id" | "numero" | "status" | "area" | "descricao" | "vara" | "tribunal" | "parteContraria" | "clienteId"
 >;
 
 const SITUACOES = [
@@ -21,6 +21,16 @@ const SITUACOES = [
   { value: "TODOS", label: "Todos" },
 ] as const;
 type Situacao = (typeof SITUACOES)[number]["value"];
+
+function normalizar(s: string) {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+function rotuloProcesso(p: ProcessoResumo, clientes: Cliente[]) {
+  const cliente = clientes.find((c) => c.id === p.clienteId)?.nome;
+  const partes = [cliente, p.parteContraria].filter(Boolean).join(" × ");
+  return partes ? `${p.numero} — ${partes}` : p.numero;
+}
 
 function situacaoDe(status: string): Situacao {
   if (status === "ATIVO") return "ATIVO";
@@ -68,10 +78,23 @@ export default function PecaGenerator({
     }
     return c;
   }, [processos]);
-  const processosFiltrados = useMemo(
-    () => (situacao === "TODOS" ? processos : processos.filter((p) => situacaoDe(p.status) === situacao)),
-    [processos, situacao]
-  );
+  const [descricao, setDescricao] = useState("");
+  const processosFiltrados = useMemo(() => {
+    const nomeCliente = new Map(clientes.map((c) => [c.id, c.nome]));
+    const termos = normalizar(descricao).split(/\s+/).filter(Boolean);
+    return processos.filter((p) => {
+      if (situacao !== "TODOS" && situacaoDe(p.status) !== situacao) return false;
+      if (termos.length === 0) return true;
+      const texto = normalizar(
+        [p.numero, p.descricao, p.area, p.parteContraria, p.vara, p.tribunal, nomeCliente.get(p.clienteId)]
+          .filter(Boolean)
+          .join(" ")
+      );
+      // O número também casa sem pontos e traços.
+      const digitos = p.numero.replace(/\D/g, "");
+      return termos.every((t) => texto.includes(t) || (/^\d+$/.test(t) && digitos.includes(t)));
+    });
+  }, [processos, clientes, situacao, descricao]);
   const [copied, setCopied] = useState(false);
 
   const [instrucao, setInstrucao] = useState("");
@@ -357,6 +380,24 @@ export default function PecaGenerator({
 
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">
+                Descrição
+              </label>
+              <input
+                type="search"
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                placeholder="Nº, cliente, parte contrária, assunto, vara…"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
+              />
+              {descricao.trim() && (
+                <p className="text-[11px] text-gray-500 mt-1">
+                  {processosFiltrados.length} processo(s) encontrado(s)
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">
                 Processo (auto-preenche)
               </label>
               <select
@@ -370,9 +411,12 @@ export default function PecaGenerator({
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
               >
                 <option value="">—</option>
+                {processo && !processosFiltrados.includes(processo) && (
+                  <option value={processo.id}>{processo.numero}</option>
+                )}
                 {processosFiltrados.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.numero}
+                    {rotuloProcesso(p, clientes)}
                   </option>
                 ))}
               </select>
