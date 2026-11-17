@@ -284,7 +284,7 @@ export async function resetUserPassword(
 
   const password = generatePassword();
   const hashed = await bcrypt.hash(password, 10);
-  await prisma.user.update({ where: { id }, data: { password: hashed } });
+  await prisma.user.update({ where: { id }, data: { password: hashed, senhaAlteradaEm: new Date() } });
 
   revalidatePath("/admin/escritorios");
   return { success: true, email: user.email, password };
@@ -354,7 +354,7 @@ export async function editarUsuario(
 
   await prisma.user.update({
     where: { id },
-    data: { name, email, ...(password ? { password: await bcrypt.hash(password, 10) } : {}) },
+    data: { name, email, ...(password ? { password: await bcrypt.hash(password, 10), senhaAlteradaEm: new Date() } : {}) },
   });
   revalidatePath("/admin", "layout");
   return { ok: true };

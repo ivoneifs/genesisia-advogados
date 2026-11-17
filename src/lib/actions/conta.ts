@@ -3,7 +3,7 @@
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { getSession } from "@/lib/session";
+import { createSession, getSession } from "@/lib/session";
 import { normalizarWhatsapp } from "@/lib/whatsapp";
 
 export type ContaState = { error?: string; success?: string } | undefined;
@@ -31,8 +31,10 @@ export async function alterarMinhaSenha(
   }
   await prisma.user.update({
     where: { id: user.id },
-    data: { password: await bcrypt.hash(nova, 10) },
+    data: { password: await bcrypt.hash(nova, 10), senhaAlteradaEm: new Date() },
   });
+  // As outras sessões caem; esta recebe um cookie novo e continua.
+  await createSession(session);
   return { success: "Senha alterada com sucesso." };
 }
 

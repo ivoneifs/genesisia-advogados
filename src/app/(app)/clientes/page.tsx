@@ -2,20 +2,47 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { deleteCliente } from "@/lib/actions/clientes";
 import { requireEscritorioId } from "@/lib/session";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { Plus, Trash2, Pencil, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import type { Prisma } from "@prisma/client";
+import BotaoExcluir from "@/components/botao-excluir";
+
+const POR_PAGINA = 50;
 
 export default async function ClientesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ erro?: string; n?: string }>;
+  searchParams: Promise<{ erro?: string; n?: string; q?: string; p?: string }>;
 }) {
-  const { erro, n } = await searchParams;
+  const { erro, n, q, p: paginaParam } = await searchParams;
+  const pagina = Math.max(1, Number.parseInt(paginaParam ?? "1", 10) || 1);
+  const busca = q?.trim();
   const escritorioId = await requireEscritorioId();
-  const clientes = await prisma.cliente.findMany({
-    where: { escritorioId },
-    orderBy: { nome: "asc" },
-    include: { _count: { select: { processos: true } } },
-  });
+  const where: Prisma.ClienteWhereInput = {
+    escritorioId,
+    ...(busca
+      ? {
+          OR: [
+            { nome: { contains: busca, mode: "insensitive" } },
+            { documento: { contains: busca } },
+            { email: { contains: busca, mode: "insensitive" } },
+            { telefone: { contains: busca } },
+          ],
+        }
+      : {}),
+  };
+  const [total, clientes] = await Promise.all([
+    prisma.cliente.count({ where }),
+    prisma.cliente.findMany({
+      where,
+      orderBy: { nome: "asc" },
+      skip: (pagina - 1) * POR_PAGINA,
+      take: POR_PAGINA,
+      include: { _count: { select: { processos: true } } },
+    }),
+  ]);
+  const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
+  const urlPagina = (num: number) =>
+    `/clientes?${new URLSearchParams({ ...(busca ? { q: busca } : {}), p: String(num) })}`;
 
   return (
     <div className="space-y-6">
@@ -23,8 +50,9 @@ export default async function ClientesPage({
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Clientes</h1>
           <p className="text-sm text-gray-500 mt-1">
-            {clientes.length} cliente{clientes.length !== 1 && "s"} cadastrado
-            {clientes.length !== 1 && "s"}.
+            {total} cliente{total !== 1 && "s"} {busca ? "encontrado" : "cadastrado"}
+            {total !== 1 && "s"}
+            {totalPaginas > 1 && ` · página ${pagina} de ${totalPaginas}`}.
           </p>
         </div>
         <Link
@@ -43,7 +71,26 @@ export default async function ClientesPage({
         </p>
       )}
 
-      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+      <form className="flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[220px]">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="search"
+            name="q"
+            defaultValue={busca}
+            placeholder="Buscar por nome, CPF/CNPJ, e-mail ou telefone"
+            className="w-full rounded-lg border border-gray-300 pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
+          />
+        </div>
+        <button
+          type="submit"
+          className="rounded-lg bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium px-4 py-2.5 transition-colors"
+        >
+          Pesquisar
+        </button>
+      </form>
+
+      <div className="rounded-xl border border-gray-200 bg-white overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-gray-500 border-b border-gray-100 bg-gray-50/60">
@@ -59,7 +106,9 @@ export default async function ClientesPage({
             {clientes.map((c) => (
               <tr key={c.id} className="hover:bg-gray-50">
                 <td className="px-5 py-3 font-medium text-gray-900">
-                  {c.nome}
+                  <Link href={`/clientes/${c.id}`} className="hover:text-[var(--brand)]">
+                    {c.nome}
+                  </Link>
                 </td>
                 <td className="px-5 py-3 text-gray-600">{c.tipo}</td>
                 <td className="px-5 py-3 text-gray-600">
@@ -81,12 +130,11 @@ export default async function ClientesPage({
                     </Link>
                     <form action={deleteCliente}>
                       <input type="hidden" name="id" value={c.id} />
-                      <button
-                        type="submit"
+                      <BotaoExcluir mensagem="Excluir este cliente?"
                         className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600"
                       >
                         <Trash2 size={14} />
-                      </button>
+                      </BotaoExcluir>
                     </form>
                   </div>
                 </td>
@@ -95,12 +143,39 @@ export default async function ClientesPage({
             {clientes.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-5 py-8 text-center text-gray-400">
-                  Nenhum cliente cadastrado ainda.
+                  {busca ? "Nenhum cliente encontrado para essa busca." : "Nenhum cliente cadastrado ainda."}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+        {totalPaginas > 1 && (
+          <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between text-sm">
+            {pagina > 1 ? (
+              <Link
+                href={urlPagina(pagina - 1)}
+                className="inline-flex items-center gap-1 text-gray-600 hover:text-[var(--brand)]"
+              >
+                <ChevronLeft size={15} /> Anterior
+              </Link>
+            ) : (
+              <span />
+            )}
+            <span className="text-xs text-gray-500">
+              Página {pagina} de {totalPaginas}
+            </span>
+            {pagina < totalPaginas ? (
+              <Link
+                href={urlPagina(pagina + 1)}
+                className="inline-flex items-center gap-1 text-gray-600 hover:text-[var(--brand)]"
+              >
+                Próxima <ChevronRight size={15} />
+              </Link>
+            ) : (
+              <span />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

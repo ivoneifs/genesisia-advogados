@@ -8,6 +8,7 @@ import { deleteProcesso } from "@/lib/actions/processos";
 import { requireEscritorioId } from "@/lib/session";
 import { parseAdvogados, formatOab } from "@/lib/advogados";
 import { Pencil, Trash2, Plus, CheckCircle2, Circle, Sparkles } from "lucide-react";
+import BotaoExcluir from "@/components/botao-excluir";
 
 export default async function ProcessoDetalhePage({
   params,
@@ -66,12 +67,11 @@ export default async function ProcessoDetalhePage({
           </Link>
           <form action={deleteProcesso}>
             <input type="hidden" name="id" value={processo.id} />
-            <button
-              type="submit"
+            <BotaoExcluir mensagem="Excluir este processo? Os prazos dele também serão removidos; tarefas, documentos e lançamentos ficam sem vínculo. Esta ação não pode ser desfeita."
               className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white hover:bg-red-50 hover:text-red-600 hover:border-red-200 text-sm font-medium px-4 py-2.5 transition-colors"
             >
               <Trash2 size={14} /> Excluir
-            </button>
+            </BotaoExcluir>
           </form>
         </div>
       </div>
@@ -166,12 +166,11 @@ export default async function ProcessoDetalhePage({
               <form action={deletePrazo}>
                 <input type="hidden" name="id" value={p.id} />
                 <input type="hidden" name="processoId" value={processo.id} />
-                <button
-                  type="submit"
+                <BotaoExcluir mensagem="Excluir este prazo?"
                   className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600"
                 >
                   <Trash2 size={14} />
-                </button>
+                </BotaoExcluir>
               </form>
             </li>
           ))}

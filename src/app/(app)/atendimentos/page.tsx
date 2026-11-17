@@ -26,6 +26,7 @@ import {
   Users,
 } from "lucide-react";
 import { requireEscritorioId } from "@/lib/session";
+import BotaoExcluir from "@/components/botao-excluir";
 
 const ICONE_TIPO = {
   PRESENCIAL: Users,
@@ -212,13 +213,12 @@ export default async function AtendimentosPage({
                   </Link>
                   <form action={deleteAtendimento}>
                     <input type="hidden" name="id" value={a.id} />
-                    <button
-                      type="submit"
+                    <BotaoExcluir mensagem="Excluir este atendimento?"
                       title="Excluir"
                       className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600"
                     >
                       <Trash2 size={14} />
-                    </button>
+                    </BotaoExcluir>
                   </form>
                 </div>
               </li>

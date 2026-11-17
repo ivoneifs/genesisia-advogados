@@ -10,6 +10,7 @@ import {
 } from "@/lib/actions/publicacoes";
 import { requireEscritorioId } from "@/lib/session";
 import { ChevronLeft, Link2, Trash2, Pencil } from "lucide-react";
+import BotaoExcluir from "@/components/botao-excluir";
 
 export default async function PublicacaoPage({
   params,
@@ -64,12 +65,11 @@ export default async function PublicacaoPage({
           <form action={deletePublicacao}>
             <input type="hidden" name="id" value={p.id} />
             <input type="hidden" name="voltar" value="/publicacoes" />
-            <button
-              type="submit"
+            <BotaoExcluir mensagem="Excluir esta publicação?"
               className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white hover:bg-red-50 hover:text-red-600 hover:border-red-200 text-sm font-medium px-4 py-2.5 transition-colors"
             >
               <Trash2 size={14} /> Excluir
-            </button>
+            </BotaoExcluir>
           </form>
         </div>
       </div>

@@ -119,7 +119,7 @@ export async function redefinirComCodigo(
   }
 
   await prisma.$transaction([
-    prisma.user.update({ where: { id: user.id }, data: { password: await bcrypt.hash(nova, 10) } }),
+    prisma.user.update({ where: { id: user.id }, data: { password: await bcrypt.hash(nova, 10), senhaAlteradaEm: new Date() } }),
     prisma.recuperacaoSenha.update({ where: { id: pedido.id }, data: { usado: true } }),
   ]);
   return { etapa: "pronto" };

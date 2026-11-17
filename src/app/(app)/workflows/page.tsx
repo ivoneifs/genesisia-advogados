@@ -3,6 +3,7 @@ import { GATILHOS } from "@/lib/workflows";
 import { createWorkflow, deleteWorkflow, toggleWorkflow } from "@/lib/actions/workflows";
 import { Workflow, Plus, Trash2, Zap, ToggleLeft, ToggleRight } from "lucide-react";
 import { requireEscritorioId } from "@/lib/session";
+import BotaoExcluir from "@/components/botao-excluir";
 
 export default async function WorkflowsPage() {
   const escritorioId = await requireEscritorioId();
@@ -120,12 +121,11 @@ export default async function WorkflowsPage() {
                 </form>
                 <form action={deleteWorkflow}>
                   <input type="hidden" name="id" value={wf.id} />
-                  <button
-                    type="submit"
+                  <BotaoExcluir mensagem="Excluir este workflow?"
                     className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600"
                   >
                     <Trash2 size={14} />
-                  </button>
+                  </BotaoExcluir>
                 </form>
               </li>
             );

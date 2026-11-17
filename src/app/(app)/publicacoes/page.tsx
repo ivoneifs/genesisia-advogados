@@ -24,6 +24,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { requireEscritorioId } from "@/lib/session";
+import BotaoExcluir from "@/components/botao-excluir";
 
 const POR_PAGINA = 30;
 const TAMANHO_PREVIA = 700;
@@ -256,12 +257,11 @@ export default async function PublicacoesPage({
                     <form action={deletePublicacao}>
                       <input type="hidden" name="id" value={p.id} />
                       <input type="hidden" name="voltar" value={urlAtual} />
-                      <button
-                        type="submit"
+                      <BotaoExcluir mensagem="Excluir esta publicação?"
                         className={`${botao} hover:bg-red-50 hover:text-red-600 hover:border-red-200`}
                       >
                         <Trash2 size={13} /> Excluir
-                      </button>
+                      </BotaoExcluir>
                     </form>
                   </div>
                 </div>
