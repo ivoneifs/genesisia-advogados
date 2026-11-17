@@ -3,6 +3,7 @@ import { formatDateBR } from "@/lib/format";
 import { createDocumento, deleteDocumento } from "@/lib/actions/documentos";
 import { Trash2, Plus, FileText, Download, Paperclip } from "lucide-react";
 import { requireEscritorioId } from "@/lib/session";
+import BotaoExcluir from "@/components/botao-excluir";
 
 const TIPOS = [
   { value: "PETICAO", label: "Petição" },
@@ -171,12 +172,11 @@ export default async function DocumentosPage() {
                     )}
                     <form action={deleteDocumento}>
                       <input type="hidden" name="id" value={d.id} />
-                      <button
-                        type="submit"
+                      <BotaoExcluir mensagem="Excluir este documento? O arquivo anexado também será apagado."
                         className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600"
                       >
                         <Trash2 size={14} />
-                      </button>
+                      </BotaoExcluir>
                     </form>
                   </div>
                 </td>

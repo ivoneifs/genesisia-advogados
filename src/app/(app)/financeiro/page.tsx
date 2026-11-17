@@ -8,6 +8,7 @@ import {
 import Badge from "@/components/badge";
 import { Trash2, Plus, CheckCircle2, Circle } from "lucide-react";
 import { exigirPagina } from "@/lib/usuario";
+import BotaoExcluir from "@/components/botao-excluir";
 
 export default async function FinanceiroPage() {
   const { escritorioId } = await exigirPagina("financeiro");
@@ -219,12 +220,11 @@ export default async function FinanceiroPage() {
                 <td className="px-5 py-3">
                   <form action={deleteFinanceiro}>
                     <input type="hidden" name="id" value={f.id} />
-                    <button
-                      type="submit"
+                    <BotaoExcluir mensagem="Excluir este lançamento financeiro?"
                       className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600"
                     >
                       <Trash2 size={14} />
-                    </button>
+                    </BotaoExcluir>
                   </form>
                 </td>
               </tr>

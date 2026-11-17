@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { getSession } from "@/lib/session";
+import { rateLimit } from "@/lib/rate-limit";
 import { tools, executeTool } from "@/lib/ai/tools";
 
 export const runtime = "nodejs";
 
 const MODEL = process.env.OPENAI_MODEL || "gpt-4o";
+
+// Limites de custo: só as últimas mensagens, com tamanho máximo.
+const MAX_MENSAGENS = 20;
+const MAX_CARACTERES = 8000;
 
 function getClient() {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -37,8 +42,29 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Cada pergunta custa tokens: limita por usuário.
+  const rl = rateLimit(`ia-assistente:${session.userId}`, 15, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: `Muitas perguntas seguidas. Aguarde ${rl.retryAfterSec}s.` },
+      { status: 429 }
+    );
+  }
+
   const body = await req.json().catch(() => null);
-  const history = Array.isArray(body?.messages) ? body.messages : null;
+  // Só aceita papéis user/assistant vindos do navegador (nada de "system").
+  const history = Array.isArray(body?.messages)
+    ? (body.messages as unknown[])
+        .filter(
+          (m): m is { role: "user" | "assistant"; content: string } =>
+            !!m &&
+            typeof m === "object" &&
+            ((m as { role?: unknown }).role === "user" || (m as { role?: unknown }).role === "assistant") &&
+            typeof (m as { content?: unknown }).content === "string"
+        )
+        .slice(-MAX_MENSAGENS)
+        .map((m) => ({ role: m.role, content: m.content.slice(0, MAX_CARACTERES) }))
+    : null;
   if (!history || history.length === 0) {
     return NextResponse.json({ error: "mensagens inválidas" }, { status: 400 });
   }
@@ -59,10 +85,7 @@ Se a pergunta não tiver relação com o escritório (processos, clientes, prazo
 
   const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: "system", content: system },
-    ...history.map((m: { role: "user" | "assistant"; content: string }) => ({
-      role: m.role,
-      content: m.content,
-    })),
+    ...history,
   ];
 
   try {
@@ -120,11 +143,13 @@ Se a pergunta não tiver relação com o escritório (processos, clientes, prazo
       );
     }
     if (error instanceof OpenAI.APIError) {
+      console.error("[assistente] erro na API da IA:", error.message);
       return NextResponse.json(
-        { error: `Erro na API da IA: ${error.message}` },
+        { error: "O serviço de IA não respondeu. Tente novamente em instantes." },
         { status: 502 }
       );
     }
+    console.error("[assistente] erro inesperado:", error);
     return NextResponse.json({ error: "Erro inesperado no assistente." }, { status: 500 });
   }
 }

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/session";
+import { getSession, lerTokenSessao } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { motivoBloqueio } from "@/lib/acesso";
 import Sidebar from "@/components/sidebar";
@@ -14,8 +14,10 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
+  if (!(await lerTokenSessao())) redirect("/login");
+  // Cookie válido, mas acesso cortado (desativado, suspenso, teste vencido).
   const session = await getSession();
-  if (!session) redirect("/login");
+  if (!session) redirect("/login?inativo=1");
 
   if (session.role === "SUPERADMIN") redirect("/admin");
 

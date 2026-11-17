@@ -31,7 +31,11 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  const celula = (v: string | null | undefined) => `"${(v ?? "").replace(/"/g, '""')}"`;
+  // Texto que começa com = + - @ vira fórmula no Excel: prefixa com '.
+  const celula = (v: string | null | undefined) => {
+    const t = (v ?? "").replace(/^([=+\-@\t\r])/, "'$1");
+    return `"${t.replace(/"/g, '""')}"`;
+  };
   const linhas = [
     ["Número", "Cliente", "Parte contrária", "Área", "Status", "Tribunal/Vara", "Advogados"].join(";"),
     ...processos.map((p) =>

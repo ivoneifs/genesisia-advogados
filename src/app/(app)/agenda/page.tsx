@@ -4,6 +4,7 @@ import { createTarefa, deleteTarefa, toggleTarefa } from "@/lib/actions/tarefas"
 import Badge from "@/components/badge";
 import { CheckCircle2, Circle, Trash2, Plus, CalendarClock } from "lucide-react";
 import { requireEscritorioId } from "@/lib/session";
+import BotaoExcluir from "@/components/botao-excluir";
 
 export default async function AgendaPage() {
   const escritorioId = await requireEscritorioId();
@@ -145,12 +146,11 @@ export default async function AgendaPage() {
                 <Badge value={t.tipo} />
                 <form action={deleteTarefa}>
                   <input type="hidden" name="id" value={t.id} />
-                  <button
-                    type="submit"
+                  <BotaoExcluir mensagem="Excluir esta tarefa?"
                     className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600"
                   >
                     <Trash2 size={14} />
-                  </button>
+                  </BotaoExcluir>
                 </form>
               </li>
             ))}

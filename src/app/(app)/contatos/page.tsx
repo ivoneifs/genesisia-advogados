@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { createContato, deleteContato } from "@/lib/actions/contatos";
 import { Trash2, Plus } from "lucide-react";
 import { requireEscritorioId } from "@/lib/session";
+import BotaoExcluir from "@/components/botao-excluir";
 
 const TIPOS = [
   { value: "ADVOGADO", label: "Advogado(a) parceiro(a)" },
@@ -134,12 +135,11 @@ export default async function ContatosPage() {
                 <td className="px-5 py-3">
                   <form action={deleteContato} className="flex justify-end">
                     <input type="hidden" name="id" value={c.id} />
-                    <button
-                      type="submit"
+                    <BotaoExcluir mensagem="Excluir este contato?"
                       className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600"
                     >
                       <Trash2 size={14} />
-                    </button>
+                    </BotaoExcluir>
                   </form>
                 </td>
               </tr>

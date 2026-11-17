@@ -90,7 +90,7 @@ export async function redefinirSenhaMembro(
   const password = generatePassword();
   await prisma.user.update({
     where: { id },
-    data: { password: await bcrypt.hash(password, 10) },
+    data: { password: await bcrypt.hash(password, 10), senhaAlteradaEm: new Date() },
   });
   await registrarAtividade("EDITOU", "Usuário", `Nova senha gerada para ${alvo.name}`, id);
   return { success: true, email: alvo.email, password };

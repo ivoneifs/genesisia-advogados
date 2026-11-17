@@ -54,6 +54,7 @@ model User {
   ativo     Boolean  @default(true)
   whatsapp  String?  // recebe alertas da agenda, prazos e publicações
   createdAt DateTime @default(now())
+  senhaAlteradaEm DateTime? // sessões emitidas antes disso deixam de valer
 
   escritorioId String?
   escritorio   Escritorio? @relation(fields: [escritorioId], references: [id])

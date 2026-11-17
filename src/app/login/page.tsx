@@ -22,6 +22,7 @@ function Login() {
   // Vindo da landing ("Teste grátis"): mostra como pedir o acesso.
   const params = useSearchParams();
   const pedindoAcesso = params.get("cadastro") === "1";
+  const sessaoEncerrada = params.get("inativo") === "1";
   const [state, action, pending] = useActionState<AuthState, FormData>(loginAction, undefined);
 
   return (
@@ -30,6 +31,13 @@ function Login() {
             <h2 className="text-2xl font-semibold text-gray-900">Entrar na sua conta</h2>
             <p className="text-sm text-gray-500 mt-1">Acesse o painel do seu escritório.</p>
           </div>
+
+          {sessaoEncerrada && !state?.error && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              Sua sessão foi encerrada. A senha pode ter sido alterada, o acesso desativado ou o período
+              de teste encerrado. Entre novamente ou fale com o suporte.
+            </div>
+          )}
 
           {pedindoAcesso && (
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">

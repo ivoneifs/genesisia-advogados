@@ -5,6 +5,7 @@ import { updateAtendimento, deleteAtendimento } from "@/lib/actions/atendimentos
 import { requireEscritorioId } from "@/lib/session";
 import { formatDateTimeBR } from "@/lib/format";
 import { Trash2 } from "lucide-react";
+import BotaoExcluir from "@/components/botao-excluir";
 
 export default async function EditarAtendimentoPage({
   params,
@@ -42,12 +43,11 @@ export default async function EditarAtendimentoPage({
         </div>
         <form action={deleteAtendimento}>
           <input type="hidden" name="id" value={atendimento.id} />
-          <button
-            type="submit"
+          <BotaoExcluir mensagem="Excluir este atendimento?"
             className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white hover:bg-red-50 hover:text-red-600 hover:border-red-200 text-sm font-medium px-4 py-2.5 transition-colors"
           >
             <Trash2 size={14} /> Excluir
-          </button>
+          </BotaoExcluir>
         </form>
       </div>
       <AtendimentoForm

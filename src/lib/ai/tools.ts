@@ -93,8 +93,8 @@ export async function executeTool(
             ? {
                 OR: [
                   { numero: { contains: query } },
-                  { parteContraria: { contains: query } },
-                  { cliente: { nome: { contains: query } } },
+                  { parteContraria: { contains: query, mode: "insensitive" } },
+                  { cliente: { nome: { contains: query, mode: "insensitive" } } },
                 ],
               }
             : {}),
@@ -193,7 +193,7 @@ export async function executeTool(
     case "buscar_clientes": {
       const query = String(args.query ?? "").trim();
       const clientes = await prisma.cliente.findMany({
-        where: { escritorioId, ...(query ? { nome: { contains: query } } : {}) },
+        where: { escritorioId, ...(query ? { nome: { contains: query, mode: "insensitive" } } : {}) },
         take: 10,
         orderBy: { nome: "asc" },
         include: { _count: { select: { processos: true } } },
