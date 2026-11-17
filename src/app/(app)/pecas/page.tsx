@@ -18,6 +18,9 @@ export default async function PecasPage({
       select: {
         id: true,
         numero: true,
+        status: true,
+        area: true,
+        descricao: true,
         vara: true,
         tribunal: true,
         parteContraria: true,
