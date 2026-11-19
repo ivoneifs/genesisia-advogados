@@ -26,7 +26,10 @@ export async function proxy(req: NextRequest) {
 
   try {
     await jwtVerify(token, secret);
-    return NextResponse.next();
+    // O layout usa a URL para bloquear módulos desligados pelo admin.
+    const headers = new Headers(req.headers);
+    headers.set("x-pathname", pathname);
+    return NextResponse.next({ request: { headers } });
   } catch {
     return NextResponse.redirect(new URL("/login", req.url));
   }

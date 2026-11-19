@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { getSession } from "@/lib/session";
+import { bloqueioApi } from "@/lib/modulos-server";
 import { prisma } from "@/lib/db";
 import { rateLimit } from "@/lib/rate-limit";
 import { pecaPorId, ESTRUTURA } from "@/lib/biblioteca-pecas";
@@ -49,6 +50,8 @@ export async function POST(req: NextRequest) {
   if (!session || !session.escritorioId) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  const bloqueio = bloqueioApi(session, "pecas");
+  if (bloqueio) return bloqueio;
 
   const client = getClient();
   if (!client) {

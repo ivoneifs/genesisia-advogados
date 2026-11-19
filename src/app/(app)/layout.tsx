@@ -8,6 +8,8 @@ import AvisoPermissao from "@/components/aviso-permissao";
 import { Suspense } from "react";
 import { marcaDoEscritorio } from "@/lib/marca";
 import { AplicarTamanhoLetras } from "@/components/tamanho-letras";
+import { headers } from "next/headers";
+import { ativo, moduloDaRota } from "@/lib/modulos";
 
 export default async function AppLayout({
   children,
@@ -33,8 +35,21 @@ export default async function AppLayout({
     redirect("/login?inativo=1");
   }
 
+  // Módulo desligado pelo admin: a página não abre nem por link direto.
+  const desativados = user.escritorio.modulosDesativados ?? [];
+  const pathname = (await headers()).get("x-pathname") ?? "";
+  const modulo = moduloDaRota(pathname);
+  if (modulo && !ativo(desativados, modulo.id)) {
+    redirect(`/dashboard?modulo-off=${encodeURIComponent(modulo.id)}`);
+  }
+
   const marca = marcaDoEscritorio(user.escritorio);
-  const menu = { nomeTopo: marca.nomeTopo, logoUrl: marca.logoUrl, corMenu: marca.corMenu };
+  const menu = {
+    nomeTopo: marca.nomeTopo,
+    logoUrl: marca.logoUrl,
+    corMenu: marca.corMenu,
+    desativados,
+  };
 
   return (
     <div className="min-h-screen flex bg-[var(--background)]" style={marca.estilo}>

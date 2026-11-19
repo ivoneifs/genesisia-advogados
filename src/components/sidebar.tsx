@@ -29,8 +29,11 @@ import {
   History,
   Menu,
   X,
+  Landmark,
+  HardHat,
 } from "lucide-react";
 import { pode, type Permissao } from "@/lib/papeis";
+import { ativo, moduloDaRota } from "@/lib/modulos";
 
 type Item = {
   href: string;
@@ -62,6 +65,13 @@ const SECOES: { titulo: string; itens: Item[] }[] = [
     ],
   },
   {
+    titulo: "Cálculos",
+    itens: [
+      { href: "/previdenciario", label: "Previdenciário", icon: Landmark, badge: "NOVO" },
+      { href: "/trabalhista", label: "Trabalhista", icon: HardHat, badge: "NOVO" },
+    ],
+  },
+  {
     titulo: "Relacionamento",
     itens: [
       { href: "/clientes", label: "Clientes", icon: Users2 },
@@ -84,7 +94,13 @@ const SECOES: { titulo: string; itens: Item[] }[] = [
 ];
 
 /** Marca do escritório no menu (definida pelo admin). */
-export type MarcaMenu = { nomeTopo: string; logoUrl: string | null; corMenu: string | null };
+export type MarcaMenu = {
+  nomeTopo: string;
+  logoUrl: string | null;
+  corMenu: string | null;
+  /** Módulos desligados pelo admin: somem do menu. */
+  desativados?: string[];
+};
 
 function Logo({ marca }: { marca: MarcaMenu }) {
   return (
@@ -108,13 +124,25 @@ const fundoMenu = (marca: MarcaMenu) =>
     ? { background: `linear-gradient(180deg, ${marca.corMenu}, color-mix(in srgb, ${marca.corMenu} 65%, black))` }
     : undefined;
 
-function Navegacao({ papel, onNavegar }: { papel: string; onNavegar?: () => void }) {
+function Navegacao({
+  papel,
+  desativados,
+  onNavegar,
+}: {
+  papel: string;
+  desativados?: string[];
+  onNavegar?: () => void;
+}) {
   const pathname = usePathname();
   return (
     <>
       <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
         {SECOES.map((secao) => {
-          const itens = secao.itens.filter((i) => !i.perm || pode(papel, i.perm));
+          const itens = secao.itens.filter((i) => {
+            if (i.perm && !pode(papel, i.perm)) return false;
+            const modulo = moduloDaRota(i.href);
+            return !modulo || ativo(desativados, modulo.id);
+          });
           if (itens.length === 0) return null;
           return (
             <div key={secao.titulo}>
@@ -171,7 +199,7 @@ export default function Sidebar({ papel, marca }: { papel: string; marca: MarcaM
   return (
     <aside className={`hidden md:flex w-64 shrink-0 flex-col sticky top-0 h-screen ${FUNDO}`} style={fundoMenu(marca)}>
       <Logo marca={marca} />
-      <Navegacao papel={papel} />
+      <Navegacao papel={papel} desativados={marca.desativados} />
     </aside>
   );
 }
@@ -211,7 +239,7 @@ export function MenuCelular({ papel, marca }: { papel: string; marca: MarcaMenu 
               <X size={18} />
             </button>
             <Logo marca={marca} />
-            <Navegacao papel={papel} onNavegar={() => setAberto(false)} />
+            <Navegacao papel={papel} desativados={marca.desativados} onNavegar={() => setAberto(false)} />
           </aside>
         </div>,
         document.body

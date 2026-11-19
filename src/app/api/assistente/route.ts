@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { getSession } from "@/lib/session";
+import { bloqueioApi } from "@/lib/modulos-server";
 import { rateLimit } from "@/lib/rate-limit";
 import { tools, executeTool } from "@/lib/ai/tools";
 import {
@@ -40,6 +41,8 @@ export async function POST(req: NextRequest) {
     );
   }
   const escritorioId = session.escritorioId;
+  const bloqueio = bloqueioApi(session, "assistente");
+  if (bloqueio) return bloqueio;
 
   const client = getClient();
   if (!client) {
@@ -80,7 +83,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Arquivos do processo enviados pelo advogado (só ids; o conteúdo fica no servidor).
-  const idsAnexos: string[] = Array.isArray(body?.anexos)
+  const idsAnexos: string[] = Array.isArray(body?.anexos) && !bloqueioApi(session, "assistente.anexos")
     ? [...new Set((body.anexos as unknown[]).filter((x): x is string => typeof x === "string"))].slice(0, MAX_ANEXOS)
     : [];
   const anexos = (await Promise.all(idsAnexos.map((id) => lerAnexo(escritorioId, id)))).filter(
