@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { createContato, deleteContato } from "@/lib/actions/contatos";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Search } from "lucide-react";
+import type { Prisma } from "@prisma/client";
+import Paginacao, { paginaDe, urlCom } from "@/components/paginacao";
 import { requireEscritorioId } from "@/lib/session";
 import BotaoExcluir from "@/components/botao-excluir";
 
@@ -13,12 +15,34 @@ const TIPOS = [
   { value: "OUTRO", label: "Outro" },
 ];
 
-export default async function ContatosPage() {
+const POR_PAGINA = 50;
+
+export default async function ContatosPage({ searchParams }: { searchParams: Promise<{ q?: string; tipo?: string; p?: string }> }) {
   const escritorioId = await requireEscritorioId();
-  const contatos = await prisma.contato.findMany({
-    where: { escritorioId },
-    orderBy: { nome: "asc" },
-  });
+  const filtros = await searchParams;
+  const pagina = paginaDe(filtros.p);
+  const busca = filtros.q?.trim();
+  const tipo = TIPOS.some((t) => t.value === filtros.tipo) ? filtros.tipo : undefined;
+  const where: Prisma.ContatoWhereInput = {
+    escritorioId,
+    ...(tipo ? { tipo } : {}),
+    ...(busca
+      ? {
+          OR: [
+            { nome: { contains: busca, mode: "insensitive" } },
+            { empresa: { contains: busca, mode: "insensitive" } },
+            { email: { contains: busca, mode: "insensitive" } },
+            { telefone: { contains: busca } },
+          ],
+        }
+      : {}),
+  };
+  const [total, contatos] = await Promise.all([
+    prisma.contato.count({ where }),
+    prisma.contato.findMany({ where, orderBy: { nome: "asc" }, skip: (pagina - 1) * POR_PAGINA, take: POR_PAGINA }),
+  ]);
+  const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
+  const filtroQs = { q: busca, tipo };
 
   return (
     <div className="space-y-6">
@@ -101,7 +125,20 @@ export default async function ContatosPage() {
         </form>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+      <form className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[220px]">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input type="search" name="q" defaultValue={busca} placeholder="Nome, empresa, e-mail ou telefone" className="w-full rounded-lg border border-gray-300 pl-8 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]" />
+        </div>
+        <select name="tipo" defaultValue={tipo ?? ""} className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm">
+          <option value="">Todos os tipos</option>
+          {TIPOS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+        </select>
+        <button className="rounded-lg bg-gray-900 text-white text-sm font-medium px-4 py-2.5">Pesquisar</button>
+        <span className="text-xs text-gray-500">{total} contato(s)</span>
+      </form>
+
+      <div className="rounded-xl border border-gray-200 bg-white overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-gray-500 border-b border-gray-100 bg-gray-50/60">
@@ -147,13 +184,14 @@ export default async function ContatosPage() {
             {contatos.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-5 py-8 text-center text-gray-400">
-                  Nenhum contato cadastrado ainda.
+                  {busca || tipo ? "Nenhum contato encontrado." : "Nenhum contato cadastrado ainda."}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+      <Paginacao pagina={pagina} totalPaginas={totalPaginas} url={(n) => urlCom("/contatos", filtroQs, n)} />
     </div>
   );
 }
