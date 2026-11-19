@@ -12,7 +12,7 @@ import { STATUS_INATIVOS } from "@/lib/processos-filtro";
 
 type ProcessoResumo = Pick<
   Processo,
-  "id" | "numero" | "status" | "area" | "descricao" | "vara" | "tribunal" | "parteContraria" | "clienteId"
+  "id" | "numero" | "status" | "area" | "descricao" | "vara" | "tribunal" | "parteContraria" | "clienteId" | "papelCliente"
 >;
 
 const SITUACOES = [
@@ -28,7 +28,7 @@ function normalizar(s: string) {
 
 function rotuloProcesso(p: ProcessoResumo, clientes: Cliente[]) {
   const cliente = clientes.find((c) => c.id === p.clienteId)?.nome;
-  const partes = [cliente, p.parteContraria].filter(Boolean).join(" × ");
+  const partes = [cliente ? `${cliente}${p.papelCliente ? ` (${p.papelCliente})` : ""}` : null, p.parteContraria].filter(Boolean).join(" × ");
   return partes ? `${p.numero} — ${partes}` : p.numero;
 }
 
@@ -86,7 +86,7 @@ export default function PecaGenerator({
       if (situacao !== "TODOS" && situacaoDe(p.status) !== situacao) return false;
       if (termos.length === 0) return true;
       const texto = normalizar(
-        [p.numero, p.descricao, p.area, p.parteContraria, p.vara, p.tribunal, nomeCliente.get(p.clienteId)]
+        [p.numero, p.descricao, p.area, p.parteContraria, p.vara, p.tribunal, p.papelCliente, nomeCliente.get(p.clienteId)]
           .filter(Boolean)
           .join(" ")
       );

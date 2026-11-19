@@ -8,6 +8,7 @@ import { exigir } from "@/lib/usuario";
 import { getSession, requireEscritorioId } from "@/lib/session";
 import { clienteValido } from "@/lib/tenant";
 import { runWorkflows } from "@/lib/workflows";
+import { papelValido } from "@/lib/papeis-processuais";
 
 function parseValor(v: FormDataEntryValue | null) {
   const s = String(v ?? "").replace(",", ".").trim();
@@ -36,6 +37,7 @@ export async function createProcesso(formData: FormData) {
       tribunal: String(formData.get("tribunal") ?? "") || null,
       vara: String(formData.get("vara") ?? "") || null,
       parteContraria: String(formData.get("parteContraria") ?? "") || null,
+      papelCliente: papelValido(formData.get("papelCliente")),
       valorCausa: parseValor(formData.get("valorCausa")),
       descricao: String(formData.get("descricao") ?? "") || null,
       responsavelId: session?.userId ?? null,
@@ -67,6 +69,7 @@ export async function updateProcesso(id: string, formData: FormData) {
       tribunal: String(formData.get("tribunal") ?? "") || null,
       vara: String(formData.get("vara") ?? "") || null,
       parteContraria: String(formData.get("parteContraria") ?? "") || null,
+      papelCliente: papelValido(formData.get("papelCliente")),
       valorCausa: parseValor(formData.get("valorCausa")),
       descricao: String(formData.get("descricao") ?? "") || null,
     },

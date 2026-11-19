@@ -99,6 +99,7 @@ model Processo {
   tribunal       String?
   vara           String?
   parteContraria String?
+  papelCliente   String? // posição do cliente: Autor, Réu, Reclamante... (lib/papeis-processuais.ts)
   valorCausa     Float?
   descricao      String?
   advogados      Json? // [{ nome, oab, uf }] vindos do DJEN
@@ -120,6 +121,8 @@ model Processo {
   publicacoes  Publicacao[]
   atendimentos Atendimento[]
   calculos     Calculo[]
+
+  @@index([escritorioId, papelCliente])
 }
 
 model Prazo {

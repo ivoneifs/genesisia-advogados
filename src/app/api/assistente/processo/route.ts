@@ -8,6 +8,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { MAX_ANEXOS, resumo, salvarAnexo, type AnexoResumo } from "@/lib/ai/anexos";
 import { formatCurrency } from "@/lib/format";
 import { formatAdvogado, parseAdvogados } from "@/lib/advogados";
+import { papelContrario } from "@/lib/papeis-processuais";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
   L.push(`DOSSIÊ DO PROCESSO ${p.numero}`, `Gerado em ${data(new Date())} pelo Genesis IA.`, "");
   L.push("DADOS DO PROCESSO");
   L.push(`Número: ${p.numero}`, `Situação: ${p.status}`, `Área/classe: ${p.area ?? "—"}`, `Tribunal: ${p.tribunal ?? "—"}`, `Vara/órgão: ${p.vara ?? "—"}`);
-  L.push(`Valor da causa: ${p.valorCausa != null ? formatCurrency(p.valorCausa) : "—"}`, `Parte contrária: ${p.parteContraria ?? "—"}`, `Responsável no escritório: ${p.responsavel?.name ?? "—"}`, `Cadastrado em: ${data(p.createdAt)}`);
+  L.push(`Valor da causa: ${p.valorCausa != null ? formatCurrency(p.valorCausa) : "—"}`, `Papel do cliente no processo: ${p.papelCliente ?? "não informado"}${papelContrario(p.papelCliente) ? ` (parte contrária como ${papelContrario(p.papelCliente)})` : ""}`, `Parte contrária: ${p.parteContraria ?? "—"}`, `Responsável no escritório: ${p.responsavel?.name ?? "—"}`, `Cadastrado em: ${data(p.createdAt)}`);
   const advs = parseAdvogados(p.advogados);
   if (advs.length) L.push(`Advogados no processo: ${advs.map(formatAdvogado).join("; ")}`);
   L.push("", "CLIENTE");

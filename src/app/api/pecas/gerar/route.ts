@@ -10,6 +10,7 @@ import { formatCurrency } from "@/lib/format";
 
 import { NOMES_AREA, areaDoNome, detectarAreas, promptEspecialista, revisarTexto } from "@/lib/ai/especialista";
 
+import { papelContrario } from "@/lib/papeis-processuais";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
@@ -142,6 +143,7 @@ export async function POST(req: NextRequest) {
           processo.area ? `classe/área: ${processo.area}` : "",
           processo.tribunal ? `tribunal: ${processo.tribunal}` : "",
           processo.vara ? `órgão/vara: ${processo.vara}` : "",
+          processo.papelCliente ? `o cliente do escritório figura como ${processo.papelCliente.toUpperCase()}${papelContrario(processo.papelCliente) ? ` (a outra parte é ${papelContrario(processo.papelCliente)})` : ""} — redija a peça em favor dessa posição` : "",
           processo.parteContraria ? `parte contrária: ${processo.parteContraria}` : "",
           processo.valorCausa != null ? `valor da causa: ${formatCurrency(processo.valorCausa)}` : "",
           advogadosProcesso.length

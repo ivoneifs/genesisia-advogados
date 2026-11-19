@@ -5,20 +5,28 @@ import { requireEscritorioId } from "@/lib/session";
 import { Plus, Trash2, Pencil, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Prisma } from "@prisma/client";
 import BotaoExcluir from "@/components/botao-excluir";
+import { GRUPOS_PAPEIS } from "@/lib/papeis-processuais";
 
 const POR_PAGINA = 50;
 
 export default async function ClientesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ erro?: string; n?: string; q?: string; p?: string }>;
+  searchParams: Promise<{ erro?: string; n?: string; q?: string; p?: string; papel?: string }>;
 }) {
-  const { erro, n, q, p: paginaParam } = await searchParams;
+  const { erro, n, q, p: paginaParam, papel } = await searchParams;
+  const grupoPapel = papel?.startsWith("grupo:") ? GRUPOS_PAPEIS.find((g) => g.grupo === papel.slice(6)) : null;
+  const filtroPapel: Prisma.ClienteWhereInput = grupoPapel
+    ? { processos: { some: { papelCliente: { in: grupoPapel.papeis } } } }
+    : papel
+      ? { processos: { some: { papelCliente: papel } } }
+      : {};
   const pagina = Math.max(1, Number.parseInt(paginaParam ?? "1", 10) || 1);
   const busca = q?.trim();
   const escritorioId = await requireEscritorioId();
   const where: Prisma.ClienteWhereInput = {
     escritorioId,
+    ...filtroPapel,
     ...(busca
       ? {
           OR: [
@@ -42,7 +50,7 @@ export default async function ClientesPage({
   ]);
   const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
   const urlPagina = (num: number) =>
-    `/clientes?${new URLSearchParams({ ...(busca ? { q: busca } : {}), p: String(num) })}`;
+    `/clientes?${new URLSearchParams({ ...(busca ? { q: busca } : {}), ...(papel ? { papel } : {}), p: String(num) })}`;
 
   return (
     <div className="space-y-6">
@@ -82,6 +90,22 @@ export default async function ClientesPage({
             className="w-full rounded-lg border border-gray-300 pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
           />
         </div>
+        <select
+          name="papel"
+          defaultValue={papel ?? ""}
+          title="Clientes que figuram neste papel em algum processo"
+          className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] max-w-[240px]"
+        >
+          <option value="">Papel nos processos: todos</option>
+          {GRUPOS_PAPEIS.map((g) => (
+            <optgroup key={g.grupo} label={g.grupo}>
+              <option value={`grupo:${g.grupo}`}>Todo o grupo: {g.grupo}</option>
+              {g.papeis.map((x) => (
+                <option key={x} value={x}>{x}</option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
         <button
           type="submit"
           className="rounded-lg bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium px-4 py-2.5 transition-colors"
