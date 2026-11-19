@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/format";
-import { Plus, RefreshCw, Search, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, RefreshCw, Search, ChevronDown, ChevronLeft, ChevronRight, Bot } from "lucide-react";
+import { ativo } from "@/lib/modulos";
+import { modulosDesativados } from "@/lib/modulos-server";
 import ProcessosToolbar from "@/components/processos-toolbar";
 import ImportarOabForm from "@/components/importar-oab-form";
 import { ultimaImportacao } from "@/lib/importacao-oab";
@@ -20,6 +22,7 @@ export default async function ProcessosPage({
   const currentStatus = status ?? "TODOS";
   const pagina = Math.max(1, Number.parseInt(paginaParam ?? "1", 10) || 1);
   const escritorioId = await requireEscritorioId();
+  const assistenteAtivo = ativo(await modulosDesativados(), "assistente.anexos");
   const where = whereProcessos(escritorioId, currentStatus, q);
 
   const [total, processos] = await Promise.all([
@@ -149,9 +152,19 @@ export default async function ProcessosPage({
                       </span>
                     )}
                   </Link>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Processo ·{" "}
-                    <span className="underline">{p.numero}</span>
+                  <p className="text-xs text-gray-500 mt-0.5 flex flex-wrap items-center gap-x-2">
+                    <span>
+                      Processo · <span className="underline">{p.numero}</span>
+                    </span>
+                    {assistenteAtivo && (
+                      <Link
+                        href={`/assistente?processo=${p.id}`}
+                        className="inline-flex items-center gap-1 text-violet-600 hover:text-violet-800"
+                        title="Analisar este processo no Assistente IA"
+                      >
+                        <Bot size={11} /> Analisar com IA
+                      </Link>
+                    )}
                   </p>
                 </td>
                 <td className="px-5 py-3 text-gray-600">{p.cliente.nome}</td>

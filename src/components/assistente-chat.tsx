@@ -170,7 +170,7 @@ function tituloDocx(mensagens: Message[], indice: number) {
   return peca ?? "Analise_Genesis_IA";
 }
 
-export default function AssistenteChat({ anexosAtivos = true }: { anexosAtivos?: boolean }) {
+export default function AssistenteChat({ anexosAtivos = true, processoId }: { anexosAtivos?: boolean; processoId?: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [area, setArea] = useState("");
@@ -228,9 +228,46 @@ export default function AssistenteChat({ anexosAtivos = true }: { anexosAtivos?:
     fetch(`/api/assistente/anexos?id=${encodeURIComponent(id)}`, { method: "DELETE" }).catch(() => {});
   }
 
+  // Processo vindo de "Processos e casos": monta o dossiê e anexa os documentos.
+  const [processo, setProcesso] = useState<{ numero: string; cliente: string } | null>(null);
+  const [importandoProcesso, setImportandoProcesso] = useState(false);
+  const importado = useRef(false);
+  useEffect(() => {
+    if (!processoId || importado.current) return;
+    importado.current = true;
+    setImportandoProcesso(true);
+    fetch("/api/assistente/processo", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ processoId }) })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error ?? "Não foi possível importar o processo.");
+        setAnexos((a) => [...a, ...(data.anexos as Anexo[])].slice(0, MAX_ANEXOS));
+        setProcesso({ numero: data.processo.numero, cliente: data.processo.cliente });
+        if (data.avisos?.length) setError(data.avisos.join(" "));
+        window.history.replaceState(null, "", "/assistente");
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : "Erro ao importar o processo."))
+      .finally(() => setImportandoProcesso(false));
+  }, [processoId]);
+
+  /** Baixa a conversa inteira (perguntas e respostas) em Word. */
+  function baixarConversa() {
+    const data = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+    const partes = [
+      "CONVERSA COM O ASSISTENTE GENESIS IA",
+      `Data: ${data}`,
+      processo ? `Processo: ${processo.numero} — cliente ${processo.cliente}` : "",
+      anexos.length ? `Documentos analisados: ${anexos.map((a) => a.nome).join("; ")}` : "",
+      "",
+      ...messages.flatMap((m) => [m.role === "user" ? "PEDIDO DO ADVOGADO" : "RESPOSTA DO ASSISTENTE", m.content, ""]),
+      "Conteúdo gerado por IA — revisar antes de utilizar.",
+    ];
+    baixarDocx(partes.filter((x) => x !== undefined).join("\n"), processo ? `Assistente_processo_${processo.numero}` : "Conversa_Assistente_IA");
+  }
+
   function novaConversa() {
     anexos.forEach((a) => removerAnexo(a.id));
     setMessages([]);
+    setProcesso(null);
     setInput("");
     setError(null);
   }
@@ -360,20 +397,36 @@ export default function AssistenteChat({ anexosAtivos = true }: { anexosAtivos?:
 
       {(messages.length > 0 || temAnexos) && (
         <div className="flex items-center justify-between border-b border-gray-100 px-4 py-2">
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-500 truncate">
+            {processo ? <span className="font-medium text-[var(--brand)]">Processo {processo.numero} — {processo.cliente} · </span> : null}
             {temAnexos
               ? `${anexos.length} documento(s) em análise nesta conversa`
               : "Conversa com o assistente"}
           </p>
-          <button
-            onClick={novaConversa}
-            className="text-xs flex items-center gap-1 text-gray-500 hover:text-[var(--brand)]"
-          >
-            <RotateCcw size={12} /> Nova conversa
-          </button>
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              onClick={baixarConversa}
+              disabled={!messages.length}
+              title="Baixar a conversa inteira em Word (.docx)"
+              className="text-xs flex items-center gap-1 text-gray-500 hover:text-[var(--brand)] disabled:opacity-40"
+            >
+              <FileDown size={12} /> Baixar conversa
+            </button>
+            <button
+              onClick={novaConversa}
+              className="text-xs flex items-center gap-1 text-gray-500 hover:text-[var(--brand)]"
+            >
+              <RotateCcw size={12} /> Nova conversa
+            </button>
+          </div>
         </div>
       )}
 
+      {importandoProcesso && (
+        <div className="mx-4 mt-3 rounded-lg bg-violet-50 border border-violet-200 px-3 py-2 text-xs text-violet-800 flex items-center gap-2">
+          <Loader2 size={13} className="animate-spin" /> Importando o processo: dados, prazos, publicações e documentos...
+        </div>
+      )}
       <div className="flex-1 overflow-y-auto p-5 space-y-4">
         {messages.length === 0 && (
           <div className="min-h-full flex flex-col items-center justify-center text-center gap-4 px-2 sm:px-6">
