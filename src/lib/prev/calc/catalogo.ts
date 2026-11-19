@@ -15,3 +15,14 @@ export function calculadora(id: string) {
 }
 
 export { SECOES };
+
+/** Função (liga/desliga do admin) que controla cada seção do catálogo. */
+export const FUNCAO_SECAO: Record<number, string> = {
+  1: "previdenciario.ferramentas", 2: "previdenciario.ferramentas", 3: "previdenciario.aposentadoria", 4: "previdenciario.aposentadoria",
+  5: "previdenciario.aposentadoria", 6: "previdenciario.beneficios", 7: "previdenciario.rpps", 8: "previdenciario.planejamento",
+  9: "previdenciario.atrasados", 10: "previdenciario.atrasados", 11: "previdenciario.ferramentas",
+};
+
+export function funcoesDaCalculadora(c: Calculadora): string[] {
+  return [FUNCAO_SECAO[c.secao], ...(c.modo === "ia" ? ["previdenciario.parecer"] : [])];
+}

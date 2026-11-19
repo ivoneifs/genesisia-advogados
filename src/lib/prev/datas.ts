@@ -89,19 +89,24 @@ export function ultimoDiaComp(comp: string): string {
   return new Date(Date.UTC(a, m, 0)).toISOString().slice(0, 10);
 }
 
-/** Converte dias em anos/meses/dias (ano de 365,25 dias, mês de 30,4375). */
+/**
+ * Converte dias em anos/meses/dias (ano de 365,25 dias, mês de 30,4375).
+ * Tolerância de 2 dias para que períodos de anos exatos não apareçam como
+ * "14a 11m 29d" por causa da média dos anos bissextos.
+ */
 export function amd(dias: number): { anos: number; meses: number; dias: number } {
-  const total = Math.max(0, Math.round(dias));
-  const anos = Math.floor(total / DIAS_ANO);
-  const resto = total - Math.round(anos * DIAS_ANO);
-  let meses = Math.floor(resto / DIAS_MES);
-  let d = Math.round(resto - meses * DIAS_MES);
+  const total = Math.max(0, dias);
+  const tol = 2 / DIAS_ANO;
+  const anos = Math.floor(total / DIAS_ANO + tol);
+  const resto = Math.max(0, total - anos * DIAS_ANO);
+  let meses = Math.floor(resto / DIAS_MES + 2 / DIAS_MES);
+  let d = Math.max(0, Math.floor(resto - meses * DIAS_MES));
   if (d >= 30) {
     meses++;
     d = 0;
   }
   if (meses >= 12) return { anos: anos + 1, meses: 0, dias: d };
-  return { anos, meses, dias: Math.max(0, d) };
+  return { anos, meses, dias: d };
 }
 
 export function fmtAMD(dias: number): string {

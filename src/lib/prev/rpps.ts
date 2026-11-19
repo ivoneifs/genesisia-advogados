@@ -8,6 +8,7 @@ import type { Indices } from "./indices";
 import { fatorComposto } from "./indices";
 import { calcularMedia, agruparSalarios, type SalarioContribuicao } from "./media";
 import {
+  TOL,
   anos,
   coeficienteArt26,
   fmtAnos,
@@ -81,7 +82,7 @@ export const REGRAS_RPPS: DefRpps[] = [
     aplicavel: ingressoAte(EC20, "16/12/1998"),
     requisitos: (c, _d, t, idade) => {
       const base = exige(c.servidor.sexo, 35, 30);
-      const excedente = Math.max(0, Math.floor(t.anos - base + 1e-9));
+      const excedente = Math.max(0, Math.floor(t.anos - base + TOL));
       const idadeMin = exige(c.servidor.sexo, 60, 55) - excedente;
       return [
         reqTempo("Tempo de contribuição", base, t.anos),
@@ -177,7 +178,7 @@ export const REGRAS_RPPS: DefRpps[] = [
         reqTempo("Tempo de contribuição", exige(sexo, 35, 30), t.anos),
         reqTempo("Serviço público", 20, sp(t)),
         reqTempo("Cargo", 5, cargo(t)),
-        req("Pontos (idade + tempo)", String(pontos), (idade + t.anos).toFixed(2), idade + t.anos + 1e-9 >= pontos),
+        req("Pontos (idade + tempo)", String(pontos), (idade + t.anos).toFixed(2), idade + t.anos + TOL >= pontos),
       ];
     },
     proventos: (c, _d, t, idade) => {
@@ -202,7 +203,7 @@ export const REGRAS_RPPS: DefRpps[] = [
         reqTempo("Magistério", exige(sexo, 30, 25), magisterio(t)),
         reqTempo("Serviço público", 20, sp(t)),
         reqTempo("Cargo", 5, cargo(t)),
-        req("Pontos (idade + tempo)", String(pontos), (idade + t.anos).toFixed(2), idade + t.anos + 1e-9 >= pontos),
+        req("Pontos (idade + tempo)", String(pontos), (idade + t.anos).toFixed(2), idade + t.anos + TOL >= pontos),
       ];
     },
     proventos: (c, _d, t, idade) => {
@@ -268,7 +269,7 @@ export const REGRAS_RPPS: DefRpps[] = [
       const melhor = ([15, 20, 25] as const).map((n) => ({ n, a: anosEspecialEquivalente(t, n), p: { 15: 66, 20: 76, 25: 86 }[n] })).sort((x, y) => y.a / y.n - x.a / x.n)[0];
       return [
         reqTempo(`Efetiva exposição (${melhor.n} anos)`, melhor.n, melhor.a),
-        req("Pontos (idade + tempo)", String(melhor.p), (idade + t.anos).toFixed(2), idade + t.anos + 1e-9 >= melhor.p),
+        req("Pontos (idade + tempo)", String(melhor.p), (idade + t.anos).toFixed(2), idade + t.anos + TOL >= melhor.p),
         reqTempo("Serviço público", 20, sp(t)),
         reqTempo("Cargo", 5, cargo(t)),
       ];

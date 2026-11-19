@@ -59,6 +59,11 @@ export type ContextoCalculo = {
   indices: Indices;
 };
 
+/**
+ * Tolerância de 2 dias nas comparações de tempo e idade: a contagem em dias
+ * com ano de 365,25 pode dar 45,999 anos para o que o INSS conta como 46.
+ */
+export const TOL = 2 / DIAS_ANO;
 export const anos = (dias: number) => dias / DIAS_ANO;
 export const fmtAnos = (a: number) => fmtAMD(a * DIAS_ANO);
 const pct = (v: number) => `${(v * 100).toFixed(0)}%`;
@@ -69,7 +74,7 @@ export function req(nome: string, exigido: string, atual: string, ok: boolean): 
 }
 
 export function reqTempo(nome: string, exigidoAnos: number, atualAnos: number): Requisito {
-  return req(nome, fmtAnos(exigidoAnos), fmtAnos(atualAnos), atualAnos + 1e-9 >= exigidoAnos);
+  return req(nome, fmtAnos(exigidoAnos), fmtAnos(atualAnos), atualAnos + TOL >= exigidoAnos);
 }
 
 export function reqIdade(exigida: number, atual: number): Requisito {
@@ -84,7 +89,7 @@ function reqCarencia(meses: number, exigida = 180): Requisito {
 
 /** Coeficiente do art. 26 da EC 103: 60% + 2% por ano que exceder o limiar. */
 export function coeficienteArt26(anosContribuicao: number, limiar: number) {
-  return 0.6 + 0.02 * Math.max(0, Math.floor(anosContribuicao + 1e-9) - limiar);
+  return 0.6 + 0.02 * Math.max(0, Math.floor(anosContribuicao + TOL) - limiar);
 }
 
 function calcularFator(seg: Segurado, data: string, t: TempoNaData, professor: boolean) {
@@ -132,7 +137,7 @@ export const REGRAS_RGPS: Definicao[] = [
     calculo: (c, d, t, idade) => {
       const pontos = idade + t.anos;
       const exigidos = pontos8595(d, c.segurado.sexo);
-      const semFator = pontos + 1e-9 >= exigidos;
+      const semFator = pontos + TOL >= exigidos;
       return {
         criterio: "80",
         coeficiente: 1,
@@ -166,7 +171,7 @@ export const REGRAS_RGPS: Definicao[] = [
       const base = exige(c.segurado.sexo, 30, 25);
       const t98 = tempoEm(c.linha, EC20).anos;
       const exigido = base + Math.max(0, base - t98) * 0.4;
-      const extras = Math.floor(Math.max(0, t.anos - exigido) + 1e-9);
+      const extras = Math.floor(Math.max(0, t.anos - exigido) + TOL);
       const coef = Math.min(1, 0.7 + 0.05 * extras);
       return { criterio: "80", coeficiente: coef, fator: "sempre", divisorMinimo: true, memoria: [`Coeficiente: 70% + 5% × ${extras} ano(s) além do exigido = ${pct(coef)}.`] };
     },
@@ -206,7 +211,7 @@ export const REGRAS_RGPS: Definicao[] = [
     requisitos: (c, _d, t) => [reqTempo("Tempo de magistério", exige(c.segurado.sexo, 30, 25), anos(t.diasProfessor)), reqCarencia(t.carencia)],
     calculo: (c, d, t, idade) => {
       const pontos = idade + t.anos + 5;
-      const semFator = pontos + 1e-9 >= pontos8595(d, c.segurado.sexo);
+      const semFator = pontos + TOL >= pontos8595(d, c.segurado.sexo);
       return { criterio: "80", coeficiente: 1, fator: semFator ? "se-favoravel" : "sempre", professor: true, divisorMinimo: true, memoria: [`Pontos com bônus de 5 (professor): ${pontos.toFixed(2)}.`] };
     },
   },
@@ -220,7 +225,7 @@ export const REGRAS_RGPS: Definicao[] = [
     aplicavel: (c) => (posReforma(c) ? "Só para filiados até 13/11/2019." : null),
     requisitos: (c, d, t, idade) => [
       reqTempo("Tempo de contribuição", exige(c.segurado.sexo, 35, 30), t.anos),
-      req("Pontos (idade + tempo)", String(pontosArt15(d, c.segurado.sexo)), (idade + t.anos).toFixed(2), idade + t.anos + 1e-9 >= pontosArt15(d, c.segurado.sexo)),
+      req("Pontos (idade + tempo)", String(pontosArt15(d, c.segurado.sexo)), (idade + t.anos).toFixed(2), idade + t.anos + TOL >= pontosArt15(d, c.segurado.sexo)),
       reqCarencia(t.carencia),
     ],
     calculo: (c, _d, t) => {
@@ -304,7 +309,7 @@ export const REGRAS_RGPS: Definicao[] = [
       const melhor = opcoes.sort((x, y) => y.a / y.n - x.a / x.n)[0];
       return [
         reqTempo(`Efetiva exposição (${melhor.n} anos)`, melhor.n, melhor.a),
-        req("Pontos (idade + tempo)", String(melhor.pontos), (idade + t.anos).toFixed(2), idade + t.anos + 1e-9 >= melhor.pontos),
+        req("Pontos (idade + tempo)", String(melhor.pontos), (idade + t.anos).toFixed(2), idade + t.anos + TOL >= melhor.pontos),
         reqCarencia(t.carencia),
       ];
     },
@@ -323,7 +328,7 @@ export const REGRAS_RGPS: Definicao[] = [
     aplicavel: (c) => (posReforma(c) ? "Só para filiados até 13/11/2019." : tempoEm(c.linha, "2100-01-01").diasProfessor > 0 ? null : "Sem períodos de magistério."),
     requisitos: (c, d, t, idade) => {
       const p = pontosArt15(d, c.segurado.sexo, true);
-      return [reqTempo("Tempo de magistério", exige(c.segurado.sexo, 30, 25), anos(t.diasProfessor)), req("Pontos (idade + tempo)", String(p), (idade + t.anos).toFixed(2), idade + t.anos + 1e-9 >= p), reqCarencia(t.carencia)];
+      return [reqTempo("Tempo de magistério", exige(c.segurado.sexo, 30, 25), anos(t.diasProfessor)), req("Pontos (idade + tempo)", String(p), (idade + t.anos).toFixed(2), idade + t.anos + TOL >= p), reqCarencia(t.carencia)];
     },
     calculo: (c, _d, t) => ({ criterio: "100", coeficiente: coeficienteArt26(t.anos, exige(c.segurado.sexo, 20, 15)) }),
   },

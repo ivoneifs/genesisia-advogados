@@ -31,6 +31,7 @@ import {
   X,
   Landmark,
   HardHat,
+  SpellCheck,
 } from "lucide-react";
 import { pode, type Permissao } from "@/lib/papeis";
 import { ativo, moduloDaRota } from "@/lib/modulos";
@@ -49,6 +50,7 @@ const SECOES: { titulo: string; itens: Item[] }[] = [
     itens: [
       { href: "/dashboard", label: "Área de trabalho", icon: LayoutDashboard },
       { href: "/assistente", label: "Assistente IA", icon: Bot, badge: "IA" },
+      { href: "/revisor", label: "Revisor de textos", icon: SpellCheck, badge: "IA" },
       { href: "/agenda", label: "Agenda", icon: CalendarDays },
       { href: "/alertas", label: "Alertas", icon: Bell },
     ],

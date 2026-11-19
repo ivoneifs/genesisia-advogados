@@ -16,6 +16,7 @@ export const GRUPOS_MODULOS: GrupoModulos[] = [
     titulo: "Principal",
     modulos: [
       { id: "assistente", nome: "Assistente IA", rota: "/assistente", funcoes: [{ id: "assistente.anexos", nome: "Envio de processos (PDF, Word, imagens)" }] },
+      { id: "revisor", nome: "Revisor de textos (IA)", rota: "/revisor" },
       { id: "agenda", nome: "Agenda", rota: "/agenda" },
       { id: "alertas", nome: "Alertas", rota: "/alertas" },
     ],
@@ -45,7 +46,8 @@ export const GRUPOS_MODULOS: GrupoModulos[] = [
           { id: "previdenciario.atrasados", nome: "Atrasados, revisão e valor da causa" },
           { id: "previdenciario.beneficios", nome: "Incapacidade, pensão e auxílio-acidente" },
           { id: "previdenciario.ferramentas", nome: "Ferramentas (fator, qualidade de segurado, acúmulo, datas)" },
-          { id: "previdenciario.parecer", nome: "Parecer e petição com IA" },
+          { id: "previdenciario.rpps", nome: "Servidor público (RPPS) e militares" },
+          { id: "previdenciario.parecer", nome: "Parecer, petição e assistente de cálculos (IA)" },
         ],
       },
       {
@@ -115,6 +117,7 @@ export function moduloDaApi(pathname: string): string | null {
   if (pathname.startsWith("/api/prev")) return "previdenciario";
   if (pathname.startsWith("/api/trab/parecer")) return "trabalhista.parecer";
   if (pathname.startsWith("/api/trab")) return "trabalhista";
+  if (pathname.startsWith("/api/ia/revisor")) return "revisor";
   return null;
 }
 

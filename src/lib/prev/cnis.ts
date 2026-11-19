@@ -66,9 +66,12 @@ const TIPOS_FILIADO = [
   "Empregado",
 ];
 
+// Tira o acento letra a letra, mantendo o tamanho (o índice vale para o texto original).
+const semAcento = (x: string) => Array.from(x, (c) => c.normalize("NFD")[0]).join("").toLowerCase();
+
 function separarTipo(origem: string): { origem: string; tipo: string } {
   for (const t of TIPOS_FILIADO) {
-    const i = origem.toLowerCase().lastIndexOf(t.toLowerCase());
+    const i = semAcento(origem).lastIndexOf(semAcento(t));
     if (i >= 0) return { origem: (origem.slice(0, i) + origem.slice(i + t.length)).trim(), tipo: t };
   }
   return { origem, tipo: "" };
