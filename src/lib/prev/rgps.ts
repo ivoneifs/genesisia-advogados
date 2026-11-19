@@ -459,6 +459,7 @@ export function avaliarRegra(def: Definicao, c: ContextoCalculo, dataAlvo?: stri
     criterio: calc.criterio,
     aplicarDivisorMinimo: calc.divisorMinimo,
     primeiraFiliacao: c.linha.primeiraFiliacao,
+    divisor108: true,
   });
   base.media = media;
   base.coeficiente = calc.coeficiente;

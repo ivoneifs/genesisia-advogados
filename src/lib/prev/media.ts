@@ -47,6 +47,7 @@ export function calcularMedia(opts: {
   aplicarDivisorMinimo?: boolean; // ATC e idade, filiados até 28/11/1999
   primeiraFiliacao?: string | null;
   limitarAoTeto?: boolean; // padrão: sim
+  divisor108?: boolean; // aposentadorias (exceto incapacidade) — Lei 8.213, art. 135-A
 }): ResultadoMedia {
   const { salarios, dib, indices, criterio } = opts;
   const limitar = opts.limitarAoTeto !== false;
@@ -105,6 +106,22 @@ export function calcularMedia(opts: {
       divisorMinimo = true;
       avisos.push(`Divisor mínimo aplicado: ${minimo} (60% do período desde 07/1994).`);
     }
+  }
+
+  // Lei 14.331/2022 (art. 135-A da Lei 8.213): filiado até 07/1994, DIB a partir
+  // de 05/05/2022, aposentadoria (exceto por incapacidade): divisor mínimo de 108.
+  if (
+    opts.divisor108 &&
+    criterio === "100" &&
+    dib >= "2022-05-05" &&
+    opts.primeiraFiliacao &&
+    opts.primeiraFiliacao <= "1994-07-31" &&
+    divisor < 108 &&
+    usadosLista.length
+  ) {
+    divisor = 108;
+    divisorMinimo = true;
+    avisos.push("Divisor mínimo de 108 aplicado (Lei 8.213/91, art. 135-A — filiado até 07/1994).");
   }
 
   if (!itens.length) avisos.push("Nenhum salário de contribuição no período básico de cálculo (desde 07/1994).");
