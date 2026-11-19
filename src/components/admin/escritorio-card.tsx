@@ -14,6 +14,7 @@ import ResetSenhaButton from "./reset-senha-button";
 import ExcluirEscritorio from "./excluir-escritorio";
 import OabsEscritorio, { type OabVinculada } from "./oabs-escritorio";
 import PersonalizarEscritorio, { type MarcaAdmin } from "./personalizar-escritorio";
+import ModulosEscritorio from "./modulos-escritorio";
 import EditarUsuario from "./editar-usuario";
 import {
   Avatar,
@@ -32,6 +33,7 @@ import {
   Users2,
   Clock,
   Palette,
+  ToggleRight,
 } from "lucide-react";
 
 type Usuario = {
@@ -53,6 +55,7 @@ type Escritorio = {
   createdAt: string;
   oabs: OabVinculada[];
   marca: MarcaAdmin;
+  modulosDesativados: string[];
   users: Usuario[];
 };
 
@@ -72,6 +75,7 @@ export default function EscritorioCard({
   const [editando, setEditando] = useState(false);
   const [planoOpen, setPlanoOpen] = useState(false);
   const [marcaOpen, setMarcaOpen] = useState(false);
+  const [modulosOpen, setModulosOpen] = useState(false);
   const [editandoUsuario, setEditandoUsuario] = useState<string | null>(null);
   const bloqueado =
     !escritorio.ativo ||
@@ -190,6 +194,14 @@ export default function EscritorioCard({
           >
             <Palette size={15} />
           </button>
+          <button
+            type="button"
+            onClick={() => setModulosOpen((v) => !v)}
+            title="Módulos e funções (ligar/desligar)"
+            className={`${ICON_BTN} ${modulosOpen ? "bg-slate-100 text-gray-700" : ""}`}
+          >
+            <ToggleRight size={15} />
+          </button>
           <ExcluirEscritorio id={escritorio.id} nome={escritorio.nome} />
         </div>
       </div>
@@ -266,6 +278,15 @@ export default function EscritorioCard({
           nome={escritorio.nome}
           marca={escritorio.marca}
           onFechar={() => setMarcaOpen(false)}
+        />
+      )}
+
+      {modulosOpen && (
+        <ModulosEscritorio
+          id={escritorio.id}
+          nome={escritorio.nome}
+          desativados={escritorio.modulosDesativados}
+          onFechar={() => setModulosOpen(false)}
         />
       )}
 

@@ -412,3 +412,28 @@ export async function salvarMarca(_prev: MarcaState, formData: FormData): Promis
   revalidatePath("/", "layout");
   return { ok: true };
 }
+
+// ---- Módulos e funções por escritório ----
+
+export type ModulosState = { ok: true; todos?: number } | { error: string } | undefined;
+
+/** Recebe os módulos MARCADOS (ligados) e grava a lista dos desligados. */
+export async function salvarModulos(_prev: ModulosState, formData: FormData): Promise<ModulosState> {
+  await requireSuperadmin();
+  const { IDS_VALIDOS, limparLista } = await import("@/lib/modulos");
+  const id = String(formData.get("id") ?? "");
+  const ligados = new Set(limparLista(formData.getAll("ligado")));
+  const desativados = [...IDS_VALIDOS].filter((m) => !ligados.has(m));
+  const todos = formData.get("aplicarTodos") === "1";
+
+  if (todos) {
+    const r = await prisma.escritorio.updateMany({ data: { modulosDesativados: desativados } });
+    revalidatePath("/", "layout");
+    return { ok: true, todos: r.count };
+  }
+  const atual = await prisma.escritorio.findUnique({ where: { id }, select: { id: true } });
+  if (!atual) return { error: "Escritório não encontrado." };
+  await prisma.escritorio.update({ where: { id }, data: { modulosDesativados: desativados } });
+  revalidatePath("/", "layout");
+  return { ok: true };
+}

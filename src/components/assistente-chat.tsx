@@ -147,7 +147,7 @@ function tituloDocx(mensagens: Message[], indice: number) {
   return peca ?? "Analise_Genesis_IA";
 }
 
-export default function AssistenteChat() {
+export default function AssistenteChat({ anexosAtivos = true }: { anexosAtivos?: boolean }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -264,7 +264,7 @@ export default function AssistenteChat() {
         arrastando ? "border-[var(--brand)] ring-2 ring-[var(--brand)]/30" : "border-gray-200"
       }`}
       onDragOver={(e) => {
-        if (!e.dataTransfer.types.includes("Files")) return;
+        if (!anexosAtivos || !e.dataTransfer.types.includes("Files")) return;
         e.preventDefault();
         setArrastando(true);
       }}
@@ -316,7 +316,7 @@ export default function AssistenteChat() {
               </p>
             </div>
 
-            {!temAnexos && (
+            {!temAnexos && anexosAtivos && (
               <button
                 onClick={() => fileRef.current?.click()}
                 className="w-full max-w-md rounded-xl border-2 border-dashed border-gray-300 hover:border-[var(--brand)] hover:bg-[var(--brand)]/5 px-4 py-5 text-sm text-gray-600 transition-colors"
@@ -497,6 +497,7 @@ export default function AssistenteChat() {
             e.target.value = "";
           }}
         />
+        {anexosAtivos && (
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
@@ -506,6 +507,7 @@ export default function AssistenteChat() {
         >
           <Paperclip size={16} />
         </button>
+        )}
         <textarea
           ref={inputRef}
           value={input}

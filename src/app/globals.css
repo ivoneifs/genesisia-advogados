@@ -225,3 +225,15 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .nx-floor, .nx-btn::before, .nx-sweep, .nx-spin-slow, .nx-blip, .nx-ping, .nx-marquee, .nx-float, .nx-beam, .nx-beam-x { animation: none; }
 }
+
+/* Relatórios de cálculo: A4 com margens e cores preservadas na impressão. */
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm 14mm;
+  }
+  .relatorio {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

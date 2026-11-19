@@ -136,6 +136,7 @@ export default async function AdminEscritoriosPage({
               trialExpirado: trialExpirado(e),
               createdAt: e.createdAt.toISOString(),
               oabs: e.advogados,
+              modulosDesativados: e.modulosDesativados ?? [],
               marca: {
                 nomeTopo: e.nomeTopo,
                 logoUrl: urlImagem(e.id, "logo", e.logoVersao),

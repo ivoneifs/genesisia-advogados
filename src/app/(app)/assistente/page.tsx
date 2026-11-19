@@ -1,5 +1,7 @@
 import { BookOpen, FileSearch, PenLine } from "lucide-react";
 import AssistenteChat from "@/components/assistente-chat";
+import { ativo } from "@/lib/modulos";
+import { modulosDesativados } from "@/lib/modulos-server";
 
 const RECURSOS = [
   {
@@ -19,7 +21,8 @@ const RECURSOS = [
   },
 ];
 
-export default function AssistentePage() {
+export default async function AssistentePage() {
+  const anexos = ativo(await modulosDesativados(), "assistente.anexos");
   return (
     <div className="space-y-4">
       <div>
@@ -43,7 +46,7 @@ export default function AssistentePage() {
           </div>
         ))}
       </div>
-      <AssistenteChat />
+      <AssistenteChat anexosAtivos={anexos} />
       <p className="text-[11px] text-gray-400">
         Os arquivos enviados ficam guardados no servidor do escritório por até 7 dias e são
         apagados ao clicar em “Nova conversa”. As respostas são minutas geradas por IA e devem ser

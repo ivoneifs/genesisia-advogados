@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
+import { bloqueioApi } from "@/lib/modulos-server";
 import { rateLimit } from "@/lib/rate-limit";
 import { ErroAnexo, excluirAnexo, resumo, salvarAnexo } from "@/lib/ai/anexos";
 
@@ -12,6 +13,8 @@ export async function POST(req: NextRequest) {
   if (!session?.escritorioId) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  const bloqueio = bloqueioApi(session, "assistente.anexos");
+  if (bloqueio) return bloqueio;
 
   const rl = rateLimit(`ia-anexo:${session.userId}`, 20, 60_000);
   if (!rl.ok) {

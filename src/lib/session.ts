@@ -14,6 +14,8 @@ export type SessionPayload = {
   email: string;
   role: string;
   escritorioId: string | null;
+  /** Módulos/funções desligados pelo superadmin (lib/modulos.ts). Só vem do banco. */
+  desativados?: string[];
 };
 
 export async function createSession(payload: SessionPayload) {
@@ -71,7 +73,9 @@ export const getSession = cache(async (): Promise<SessionPayload | null> => {
       ativo: true,
       escritorioId: true,
       senhaAlteradaEm: true,
-      escritorio: { select: { ativo: true, status: true, trialExpira: true } },
+      escritorio: {
+        select: { ativo: true, status: true, trialExpira: true, modulosDesativados: true },
+      },
     },
   });
   if (!user || !user.ativo) return null;
@@ -87,6 +91,7 @@ export const getSession = cache(async (): Promise<SessionPayload | null> => {
     email: user.email,
     role: user.role,
     escritorioId: user.escritorioId,
+    desativados: user.escritorio?.modulosDesativados ?? [],
   };
 });
 
