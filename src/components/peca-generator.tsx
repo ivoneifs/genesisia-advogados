@@ -150,6 +150,32 @@ export default function PecaGenerator({
     await chamarIA({ instrucao: texto });
   }
 
+  const [revisaoDupla, setRevisaoDupla] = useState(true);
+  const [melhorando, setMelhorando] = useState(false);
+  const [dicas, setDicas] = useState<string[]>([]);
+
+  /** Reescreve a descrição do advogado como instrução completa para a IA. */
+  async function melhorarTexto(texto: string, aplicar: (t: string) => void, pecaNome?: string) {
+    if (!texto.trim() || melhorando) return;
+    setMelhorando(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/ia/melhorar-prompt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texto, destino: pecaNome ? "peca" : "assistente", peca: pecaNome }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Erro ao melhorar o texto.");
+      aplicar(data.prompt);
+      setDicas(data.perguntas ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao melhorar o texto.");
+    } finally {
+      setMelhorando(false);
+    }
+  }
+
   async function chamarIA(payload: Record<string, string>) {
     if (loading) return;
     setLoading(true);
@@ -159,7 +185,7 @@ export default function PecaGenerator({
       const res = await fetch("/api/pecas/gerar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payload, clienteId, processoId, advogadoId }),
+        body: JSON.stringify({ ...payload, clienteId, processoId, advogadoId, revisao: revisaoDupla }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -434,6 +460,14 @@ export default function PecaGenerator({
                   placeholder="Resuma os fatos, datas, valores e o que se pede. Quanto mais detalhes, melhor a minuta."
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
                 />
+                <OpcoesIA
+                  melhorando={melhorando}
+                  podeMelhorar={!!detalhes.trim()}
+                  onMelhorar={() => melhorarTexto(detalhes, setDetalhes, BIBLIOTECA.find((p) => p.id === pecaId)?.nome)}
+                  revisao={revisaoDupla}
+                  setRevisao={setRevisaoDupla}
+                  dicas={dicas}
+                />
                 <button
                   type="button"
                   onClick={() => chamarIA({ pecaId, detalhes })}
@@ -467,6 +501,14 @@ export default function PecaGenerator({
                   rows={4}
                   placeholder="Ex: redija uma notificação extrajudicial cobrando aluguel em atraso..."
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
+                />
+                <OpcoesIA
+                  melhorando={melhorando}
+                  podeMelhorar={!!instrucao.trim()}
+                  onMelhorar={() => melhorarTexto(instrucao, setInstrucao)}
+                  revisao={revisaoDupla}
+                  setRevisao={setRevisaoDupla}
+                  dicas={dicas}
                 />
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   {SUGESTOES_IA.map((s) => (
@@ -555,6 +597,43 @@ export default function PecaGenerator({
           />
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Botão "Melhorar descrição" + revisão dupla, abaixo dos campos de pedido. */
+function OpcoesIA({
+  melhorando,
+  podeMelhorar,
+  onMelhorar,
+  revisao,
+  setRevisao,
+  dicas,
+}: {
+  melhorando: boolean;
+  podeMelhorar: boolean;
+  onMelhorar: () => void;
+  revisao: boolean;
+  setRevisao: (v: boolean) => void;
+  dicas: string[];
+}) {
+  return (
+    <div className="mt-2 space-y-1.5">
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={onMelhorar}
+          disabled={melhorando || !podeMelhorar}
+          className="inline-flex items-center gap-1 rounded-md border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-700 hover:bg-violet-100 disabled:opacity-40"
+        >
+          <Sparkles size={12} /> {melhorando ? "Melhorando..." : "Melhorar descrição com IA"}
+        </button>
+        <label className="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer" title="Um revisor sênior confere e aprimora a minuta antes de entregar">
+          <input type="checkbox" checked={revisao} onChange={(e) => setRevisao(e.target.checked)} className="accent-[var(--brand)]" />
+          Revisão dupla (mais precisa)
+        </label>
+      </div>
+      {dicas.length > 0 && <p className="text-[11px] text-violet-700">Para melhorar ainda mais, informe: {dicas.join("; ")}</p>}
     </div>
   );
 }

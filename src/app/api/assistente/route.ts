@@ -4,6 +4,7 @@ import { getSession } from "@/lib/session";
 import { bloqueioApi } from "@/lib/modulos-server";
 import { rateLimit } from "@/lib/rate-limit";
 import { tools, executeTool } from "@/lib/ai/tools";
+import { NOMES_AREA, detectarAreas, promptEspecialista, revisarTexto, type AreaDireito } from "@/lib/ai/especialista";
 import {
   MAX_ANEXOS,
   cortarMeio,
@@ -98,22 +99,28 @@ export async function POST(req: NextRequest) {
     year: "numeric",
   });
 
-  const system = `Você é o assistente de IA do Genesis IA, sistema de gestão jurídica do escritório de ${session.name}.
-Hoje é ${today}.
-Responda de forma direta e profissional, em português do Brasil.
-Use as ferramentas disponíveis para consultar processos, prazos, clientes e financeiro reais do escritório antes de responder perguntas sobre esses dados — nunca invente números de processo, nomes ou valores.
-Quando ajudar a redigir textos jurídicos, deixe claro que é uma minuta e deve ser revisada por um(a) advogado(a) antes de protocolar.
-Se a pergunta não tiver relação com o escritório (processos, clientes, prazos, financeiro, redação jurídica), responda normalmente como um assistente geral, mas de forma breve.
+  // Especialista: áreas detectadas pelo pedido e pelos documentos (ou escolhidas na tela).
+  const ultimoPedido = [...history].reverse().find((m) => m.role === "user")?.content ?? "";
+  const textoAnexos = anexos.map((a) => `${a.nome}\n${a.texto.slice(0, 20_000)}`).join("\n");
+  const areaEscolhida = typeof body?.area === "string" && body.area in NOMES_AREA ? (body.area as AreaDireito) : null;
+  const areas = areaEscolhida ? [areaEscolhida] : detectarAreas(`${history.slice(-4).map((m) => m.content).join("\n")}\n${textoAnexos}`);
+  const revisao = body?.revisao === true;
 
-ANÁLISE DE DOCUMENTOS ANEXADOS
-Quando houver documentos anexados (autos, petições, decisões, contratos, fotos de documentos), atue como advogado(a) sênior que leu os autos inteiros:
-- Baseie-se no que está nos documentos. Cite a página ou o trecho ("fl./pág. X") ao afirmar um fato. Se algo não constar dos autos, diga que não consta — não invente partes, datas, valores, números de processo ou decisões.
-- Resumos: identifique partes, número do processo, juízo/vara, classe, pedidos, valor da causa, fatos, fundamentos de cada parte, decisões proferidas (com data), fase atual, prazos em curso e próximos passos.
-- Organização: quando útil, monte linha do tempo, quadro de provas, pontos controvertidos, pontos fortes e fracos e riscos.
-- Peças processuais: elabore a peça completa e pronta para revisão, com endereçamento ao juízo correto, qualificação das partes conforme os autos, fatos, fundamentos jurídicos (legislação com artigos; súmulas e teses de tribunais superiores quando pertinentes), pedidos e fechamento ("Nestes termos, pede deferimento", local, data, advogado e OAB em branco para preencher). Escreva os títulos das seções em LETRAS MAIÚSCULAS em linhas próprias e não use Markdown (#, **) dentro da peça, para que ela possa ser exportada para Word. Use [PREENCHER] para dados que faltarem.
-- Jurisprudência, legislação e doutrina: indique os dispositivos legais aplicáveis e as súmulas/temas que você conhece com segurança. Não invente números de acórdãos, relatores ou datas; quando citar precedente específico, marque "(conferir a referência antes de protocolar)". Para doutrina, indique autor e obra apenas quando tiver certeza.
-- Se o pedido do advogado for vago, faça a análise mais útil possível e, ao final, sugira os próximos pedidos que podem ser feitos.
-- Termine peças e análises lembrando, em uma linha, que é minuta gerada por IA e precisa de revisão profissional.`;
+  const system = promptEspecialista({
+    areas,
+    tarefa: anexos.length ? "analise" : "chat",
+    extra: `CONTEXTO DO SISTEMA
+Você atua dentro do Genesis IA, sistema do escritório de ${session.name}. Hoje é ${today}.
+Use as ferramentas disponíveis para consultar processos, prazos, clientes e financeiro reais do escritório antes de responder perguntas sobre esses dados — nunca invente números de processo, nomes ou valores.
+Se a pergunta não for jurídica nem sobre o escritório, responda de forma breve como assistente geral.
+
+DOCUMENTOS ANEXADOS
+Quando houver documentos anexados (autos, petições, decisões, contratos, fotos de documentos), atue como quem leu os autos inteiros:
+- Cite a página ou o trecho ("fl./pág. X") ao afirmar um fato; o que não constar dos autos, diga que não consta.
+- Resumos: partes, número do processo, juízo, classe, pedidos, valor da causa, fatos, teses de cada parte, decisões (com data), fase atual, prazos em curso e próximos passos.
+- Organize, quando útil: linha do tempo, quadro de provas, pontos controvertidos, pontos fortes e fracos e riscos.
+- Peças: completas e prontas para revisão, com qualificação das partes conforme os autos e [PREENCHER] para dados ausentes, sem Markdown.`,
+  });
 
   const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: "system", content: system },
@@ -128,7 +135,8 @@ Quando houver documentos anexados (autos, petições, decisões, contratos, foto
 
       const response = await client.chat.completions.create({
         model: MODEL,
-        max_tokens: anexos.length ? 12000 : 4096,
+        max_tokens: anexos.length ? 12000 : 6000,
+        temperature: 0.3,
         messages,
         tools,
       });
@@ -137,7 +145,12 @@ Quando houver documentos anexados (autos, petições, decisões, contratos, foto
       const message = choice.message;
 
       if (!message.tool_calls || message.tool_calls.length === 0) {
-        return NextResponse.json({ reply: message.content ?? "" });
+        let reply = message.content ?? "";
+        // Revisão dupla: um revisor sênior confere e aprimora a resposta.
+        if (revisao && reply.length > 200) {
+          reply = await revisarTexto(client, { pedido: ultimoPedido, contexto: textoAnexos || undefined, rascunho: reply, areas, maxTokens: anexos.length ? 12000 : 6000 });
+        }
+        return NextResponse.json({ reply, areas: areas.map((a) => NOMES_AREA[a]), revisado: revisao });
       }
 
       messages.push(message);

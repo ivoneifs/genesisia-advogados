@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy, FileDown, Loader2, SpellCheck, Wand2, Scale, MessageSquareText, ListCollapse, AlertCircle, ArrowRightLeft } from "lucide-react";
+import { Check, Copy, FileDown, Loader2, SpellCheck, Wand2, Scale, MessageSquareText, ListCollapse, AlertCircle, ArrowRightLeft, Sparkles, FileText, Users } from "lucide-react";
 import { baixarDocx } from "@/lib/exportar-docx";
 
 const MODOS = [
@@ -10,6 +10,9 @@ const MODOS = [
   { id: "juridico", nome: "Linguagem jurídica", desc: "Tom formal e técnico para peças", icone: Scale },
   { id: "simplificar", nome: "Linguagem simples", desc: "Para o cliente leigo entender", icone: MessageSquareText },
   { id: "resumir", nome: "Resumir", desc: "Versão curta com o essencial", icone: ListCollapse },
+  { id: "prompt", nome: "Melhorar prompt", desc: "Transforma um pedido simples em instrução completa para a IA", icone: Sparkles },
+  { id: "relatorio", nome: "Virar relatório", desc: "Relatório jurídico profissional estruturado", icone: FileText },
+  { id: "cliente", nome: "Relatório ao cliente", desc: "Linguagem simples, cenários e próximos passos", icone: Users },
 ] as const;
 
 type Alteracao = { de: string; para: string; motivo: string };
@@ -44,7 +47,7 @@ export default function RevisorTextos() {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {MODOS.map(({ id, nome, desc, icone: Icone }) => (
           <button
             key={id}
@@ -100,7 +103,7 @@ export default function RevisorTextos() {
 
       {alteracoes.length > 0 && (
         <div className="rounded-xl border border-gray-200 bg-white">
-          <p className="px-4 py-2.5 border-b border-gray-100 text-sm font-medium text-gray-900">{alteracoes.length} alteração(ões)</p>
+          <p className="px-4 py-2.5 border-b border-gray-100 text-sm font-medium text-gray-900">{modo === "prompt" ? "Informações que melhorariam o resultado" : `${alteracoes.length} alteração(ões)`}</p>
           <ul className="divide-y divide-gray-100">
             {alteracoes.map((a, i) => (
               <li key={i} className="px-4 py-2.5 text-sm grid sm:grid-cols-[1fr_1fr_1.2fr] gap-2">

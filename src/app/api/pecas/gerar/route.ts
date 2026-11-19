@@ -8,8 +8,10 @@ import { pecaPorId, ESTRUTURA } from "@/lib/biblioteca-pecas";
 import { parseAdvogados, formatAdvogado } from "@/lib/advogados";
 import { formatCurrency } from "@/lib/format";
 
+import { NOMES_AREA, areaDoNome, detectarAreas, promptEspecialista, revisarTexto } from "@/lib/ai/especialista";
+
 export const runtime = "nodejs";
-export const maxDuration = 180;
+export const maxDuration = 300;
 
 const MODEL = process.env.OPENAI_MODEL || "gpt-4o";
 
@@ -22,7 +24,7 @@ function getClient() {
 // Padrão de redação e formatação das minutas. As convenções de formatação
 // (títulos em maiúsculas, parágrafos numerados, alíneas) são as que o
 // exportador .docx (src/lib/exportar-docx.ts) reconhece.
-const PADRAO_REDACAO = `Você é um advogado sênior brasileiro, com mais de 20 anos de prática forense e consultiva, que redige minutas de peças e documentos jurídicos para outros advogados revisarem e assinarem, no sistema Genesis IA.
+const PADRAO_REDACAO = `PADRÃO DE REDAÇÃO DAS MINUTAS (o advogado revisará e assinará)
 
 QUALIDADE TÉCNICA
 - Redija em português do Brasil, com linguagem jurídica formal, técnica, clara e persuasiva, no padrão de um escritório de excelência. Evite prolixidade, repetições e chavões vazios.
@@ -160,7 +162,17 @@ export async function POST(req: NextRequest) {
     year: "numeric",
   });
 
-  const system = `${PADRAO_REDACAO}
+  // Especialista da área da peça (ou detectada pelo pedido) + padrão de redação.
+  const areas = (() => {
+    const daPeca = peca ? areaDoNome(peca.area) : null;
+    const detectadas = detectarAreas(`${peca?.nome ?? ""} ${instrucao} ${processo?.area ?? ""}`);
+    return [...new Set([...(daPeca ? [daPeca] : []), ...detectadas])].slice(0, 2);
+  })();
+  const revisao = body?.revisao !== false;
+
+  const system = `${promptEspecialista({ areas, tarefa: "peca" })}
+
+${PADRAO_REDACAO}
 
 Data de hoje: ${today}.
 
@@ -178,11 +190,15 @@ ${contexto}`;
       ],
     });
 
-    const texto = (response.choices[0]?.message?.content ?? "")
+    let rascunho = response.choices[0]?.message?.content ?? "";
+    if (revisao && rascunho.length > 300) {
+      rascunho = await revisarTexto(client, { pedido: instrucao, contexto, rascunho, areas, maxTokens: peca ? 8000 : 4000 });
+    }
+    const texto = rascunho
       .replace(/\*\*(.+?)\*\*/g, "$1")
       .replace(/^#+\s*/gm, "")
       .trim();
-    return NextResponse.json({ texto });
+    return NextResponse.json({ texto, areas: areas.map((a) => NOMES_AREA[a]), revisado: revisao });
   } catch (error) {
     if (error instanceof OpenAI.AuthenticationError) {
       return NextResponse.json(
