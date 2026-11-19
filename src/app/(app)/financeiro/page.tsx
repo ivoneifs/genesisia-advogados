@@ -6,20 +6,55 @@ import {
   toggleFinanceiroStatus,
 } from "@/lib/actions/financeiro";
 import Badge from "@/components/badge";
-import { Trash2, Plus, CheckCircle2, Circle } from "lucide-react";
+import { Trash2, Plus, CheckCircle2, Circle, Search } from "lucide-react";
+import Link from "next/link";
+import type { Prisma } from "@prisma/client";
+import Paginacao, { paginaDe, urlCom } from "@/components/paginacao";
 import { exigirPagina } from "@/lib/usuario";
 import BotaoExcluir from "@/components/botao-excluir";
 
-export default async function FinanceiroPage() {
+const POR_PAGINA = 50;
+
+export default async function FinanceiroPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; tipo?: string; status?: string; de?: string; ate?: string; p?: string }>;
+}) {
   const { escritorioId } = await exigirPagina("financeiro");
-  const [lancamentos, clientes, processos, receitas, despesas] =
+  const filtros = await searchParams;
+  const pagina = paginaDe(filtros.p);
+  const busca = filtros.q?.trim();
+  const tipo = filtros.tipo === "RECEITA" || filtros.tipo === "DESPESA" ? filtros.tipo : undefined;
+  const status = filtros.status === "PAGO" || filtros.status === "PENDENTE" ? filtros.status : undefined;
+  const valida = (d?: string) => (d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : undefined);
+  const de = valida(filtros.de);
+  const ate = valida(filtros.ate);
+  const where: Prisma.FinanceiroWhereInput = {
+    escritorioId,
+    ...(tipo ? { tipo } : {}),
+    ...(status ? { status } : {}),
+    ...(de || ate ? { vencimento: { ...(de ? { gte: new Date(`${de}T00:00:00Z`) } : {}), ...(ate ? { lte: new Date(`${ate}T23:59:59Z`) } : {}) } } : {}),
+    ...(busca
+      ? {
+          OR: [
+            { descricao: { contains: busca, mode: "insensitive" } },
+            { cliente: { nome: { contains: busca, mode: "insensitive" } } },
+            { processo: { numero: { contains: busca } } },
+          ],
+        }
+      : {}),
+  };
+  const [total, lancamentos, clientes, processos, receitas, despesas, aReceber, aPagar, filtrado] =
     await Promise.all([
+      prisma.financeiro.count({ where }),
       prisma.financeiro.findMany({
-        where: { escritorioId },
+        where,
         orderBy: { vencimento: "asc" },
-        include: { cliente: true, processo: true },
+        skip: (pagina - 1) * POR_PAGINA,
+        take: POR_PAGINA,
+        include: { cliente: { select: { nome: true } }, processo: { select: { numero: true } } },
       }),
-      prisma.cliente.findMany({ where: { escritorioId }, orderBy: { nome: "asc" } }),
+      prisma.cliente.findMany({ where: { escritorioId }, orderBy: { nome: "asc" }, select: { id: true, nome: true } }),
       prisma.processo.findMany({
         where: { escritorioId },
         orderBy: { numero: "asc" },
@@ -33,7 +68,14 @@ export default async function FinanceiroPage() {
         _sum: { valor: true },
         where: { tipo: "DESPESA", status: "PAGO", escritorioId },
       }),
+      prisma.financeiro.aggregate({ _sum: { valor: true }, where: { tipo: "RECEITA", status: "PENDENTE", escritorioId } }),
+      prisma.financeiro.aggregate({ _sum: { valor: true }, where: { tipo: "DESPESA", status: "PENDENTE", escritorioId } }),
+      prisma.financeiro.groupBy({ by: ["tipo"], _sum: { valor: true }, where }),
     ]);
+  const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
+  const filtroQs = { q: busca, tipo, status, de, ate };
+  const filtrando = Object.values(filtroQs).some(Boolean);
+  const somaFiltro = (t: string) => filtrado.find((x) => x.tipo === t)?._sum.valor ?? 0;
 
   const saldo = (receitas._sum.valor ?? 0) - (despesas._sum.valor ?? 0);
 
@@ -46,7 +88,7 @@ export default async function FinanceiroPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="rounded-xl border border-gray-200 bg-white p-5">
           <p className="text-sm text-gray-500">Receitas recebidas</p>
           <p className="mt-2 text-2xl font-semibold text-emerald-600">
@@ -63,6 +105,18 @@ export default async function FinanceiroPage() {
           <p className="text-sm text-gray-500">Saldo</p>
           <p className="mt-2 text-2xl font-semibold text-gray-900">
             {formatCurrency(saldo)}
+          </p>
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <p className="text-sm text-gray-500">A receber</p>
+          <p className="mt-2 text-2xl font-semibold text-emerald-700/80">
+            {formatCurrency(aReceber._sum.valor ?? 0)}
+          </p>
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <p className="text-sm text-gray-500">A pagar</p>
+          <p className="mt-2 text-2xl font-semibold text-red-700/80">
+            {formatCurrency(aPagar._sum.valor ?? 0)}
           </p>
         </div>
       </div>
@@ -164,7 +218,31 @@ export default async function FinanceiroPage() {
         </form>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+      <form className="flex flex-wrap items-end gap-2 rounded-xl border border-gray-200 bg-white p-3">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input name="q" defaultValue={busca} placeholder="Descrição, cliente ou nº do processo" className="w-full rounded-lg border border-gray-300 pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]" />
+        </div>
+        <select name="tipo" defaultValue={tipo ?? ""} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+          <option value="">Receitas e despesas</option>
+          <option value="RECEITA">Só receitas</option>
+          <option value="DESPESA">Só despesas</option>
+        </select>
+        <select name="status" defaultValue={status ?? ""} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+          <option value="">Pagos e pendentes</option>
+          <option value="PENDENTE">Pendentes</option>
+          <option value="PAGO">Pagos</option>
+        </select>
+        <label className="text-xs text-gray-500">Vencimento de<input type="date" name="de" defaultValue={de} className="block rounded-lg border border-gray-300 px-2 py-1.5 text-sm" /></label>
+        <label className="text-xs text-gray-500">até<input type="date" name="ate" defaultValue={ate} className="block rounded-lg border border-gray-300 px-2 py-1.5 text-sm" /></label>
+        <button className="rounded-lg bg-gray-900 text-white text-sm font-medium px-4 py-2">Filtrar</button>
+        {filtrando && <Link href="/financeiro" className="rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-100">Limpar</Link>}
+      </form>
+      <p className="text-xs text-gray-500 -mt-4">
+        {total} lançamento(s){filtrando ? " no filtro" : ""} · receitas {formatCurrency(somaFiltro("RECEITA"))} · despesas {formatCurrency(somaFiltro("DESPESA"))}
+      </p>
+
+      <div className="rounded-xl border border-gray-200 bg-white overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-gray-500 border-b border-gray-100 bg-gray-50/60">
@@ -232,13 +310,14 @@ export default async function FinanceiroPage() {
             {lancamentos.length === 0 && (
               <tr>
                 <td colSpan={8} className="px-5 py-8 text-center text-gray-400">
-                  Nenhum lançamento cadastrado.
+                  {filtrando ? "Nenhum lançamento neste filtro." : "Nenhum lançamento cadastrado."}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+      <Paginacao pagina={pagina} totalPaginas={totalPaginas} url={(n) => urlCom("/financeiro", filtroQs, n)} />
     </div>
   );
 }
