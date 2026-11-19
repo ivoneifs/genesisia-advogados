@@ -21,8 +21,9 @@ const RECURSOS = [
   },
 ];
 
-export default async function AssistentePage() {
+export default async function AssistentePage({ searchParams }: { searchParams: Promise<{ processo?: string }> }) {
   const anexos = ativo(await modulosDesativados(), "assistente.anexos");
+  const { processo } = await searchParams;
   return (
     <div className="space-y-4">
       <div>
@@ -46,7 +47,7 @@ export default async function AssistentePage() {
           </div>
         ))}
       </div>
-      <AssistenteChat anexosAtivos={anexos} />
+      <AssistenteChat anexosAtivos={anexos} processoId={anexos ? processo : undefined} />
       <p className="text-[11px] text-gray-400">
         Os arquivos enviados ficam guardados no servidor do escritório por até 7 dias e são
         apagados ao clicar em “Nova conversa”. As respostas são minutas geradas por IA e devem ser

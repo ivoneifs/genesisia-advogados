@@ -7,7 +7,9 @@ import { createPrazo, deletePrazo, togglePrazoStatus } from "@/lib/actions/prazo
 import { deleteProcesso } from "@/lib/actions/processos";
 import { requireEscritorioId } from "@/lib/session";
 import { parseAdvogados, formatOab } from "@/lib/advogados";
-import { Pencil, Trash2, Plus, CheckCircle2, Circle, Sparkles } from "lucide-react";
+import { Pencil, Trash2, Plus, CheckCircle2, Circle, Sparkles, Bot } from "lucide-react";
+import { ativo } from "@/lib/modulos";
+import { modulosDesativados } from "@/lib/modulos-server";
 import BotaoExcluir from "@/components/botao-excluir";
 
 export default async function ProcessoDetalhePage({
@@ -31,6 +33,7 @@ export default async function ProcessoDetalhePage({
 
   if (!processo) notFound();
   const advogados = parseAdvogados(processo.advogados);
+  const assistenteAtivo = ativo(await modulosDesativados(), "assistente.anexos");
 
   return (
     <div className="space-y-8">
@@ -53,6 +56,15 @@ export default async function ProcessoDetalhePage({
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          {assistenteAtivo && (
+            <Link
+              href={`/assistente?processo=${processo.id}`}
+              title="Leva dados, prazos, publicações e documentos do processo para a IA analisar"
+              className="inline-flex items-center gap-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium px-4 py-2.5 transition-colors"
+            >
+              <Bot size={14} /> Analisar no Assistente IA
+            </Link>
+          )}
           <Link
             href={`/pecas?processo=${processo.id}`}
             className="inline-flex items-center gap-2 rounded-lg bg-[var(--brand)] hover:bg-[var(--brand-dark)] text-white text-sm font-medium px-4 py-2.5 transition-colors"
