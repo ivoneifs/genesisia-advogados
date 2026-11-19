@@ -15,6 +15,8 @@ const CABECALHOS_SEGURANCA = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Leitores de PDF e Word do Assistente rodam direto do node_modules (sem bundle).
+  serverExternalPackages: ["unpdf", "mammoth", "word-extractor"],
   async headers() {
     return [{ source: "/:path*", headers: CABECALHOS_SEGURANCA }];
   },
