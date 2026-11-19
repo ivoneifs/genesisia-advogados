@@ -111,6 +111,9 @@ export default async function PesquisaPage({
           {FONTES.length} fontes públicas de consulta: órgãos, tribunais, registros e
           dados abertos. Filtre pelo dado que você tem e pelo que quer descobrir.
         </p>
+        <Link href="/pesquisa/sistemas" className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-[var(--brand)]/40 bg-[var(--brand)]/5 px-3 py-1.5 text-sm font-medium text-[var(--brand)] hover:bg-[var(--brand)]/10">
+          Sistemas e portais jurídicos (PJe, e-SAJ, SISBAJUD, cartórios, certificados…) →
+        </Link>
       </div>
 
       <form className="rounded-xl border border-gray-200 bg-white p-4 space-y-3">
