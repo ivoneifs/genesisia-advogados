@@ -3,6 +3,7 @@ import { getSession } from "@/lib/session";
 import { bloqueioApi } from "@/lib/modulos-server";
 import { rateLimit } from "@/lib/rate-limit";
 import { clienteIA, erroIA, MODELO, semChave } from "@/lib/ai/openai";
+import { MELHORAR_PROMPT, promptRelatorio } from "@/lib/ai/especialista";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
@@ -13,6 +14,9 @@ const MODOS: Record<string, string> = {
   juridico: "Corrija e reescreva em linguagem jurídica formal e técnica, adequada a peças processuais, mantendo todos os fatos, pedidos e dados.",
   simplificar: "Corrija e reescreva em linguagem simples e acessível ao cliente leigo, sem juridiquês, mantendo o conteúdo.",
   resumir: "Corrija e produza um resumo objetivo do texto, preservando as informações essenciais.",
+  prompt: "",
+  relatorio: "",
+  cliente: "",
 };
 
 export async function POST(req: NextRequest) {
@@ -27,10 +31,32 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => null);
   const texto = String(body?.texto ?? "").slice(0, 60_000);
-  const modo = MODOS[String(body?.modo)] ? String(body.modo) : "corrigir";
+  const modo = String(body?.modo) in MODOS ? String(body.modo) : "corrigir";
   if (texto.trim().length < 3) return NextResponse.json({ error: "Digite ou cole o texto." }, { status: 400 });
 
   try {
+    if (modo === "prompt") {
+      const r = await client.chat.completions.create({
+        model: MODELO,
+        max_tokens: 2500,
+        temperature: 0.3,
+        response_format: { type: "json_object" },
+        messages: [{ role: "system", content: MELHORAR_PROMPT }, { role: "user", content: `PEDIDO ORIGINAL:\n${texto}` }],
+      });
+      const json = JSON.parse(r.choices[0].message.content || "{}");
+      const perguntas: string[] = Array.isArray(json.perguntas) ? json.perguntas.map(String) : [];
+      return NextResponse.json({ texto: String(json.prompt ?? ""), alteracoes: perguntas.map((p) => ({ de: "", para: p, motivo: "Informação que melhoraria o resultado" })) });
+    }
+    if (modo === "relatorio" || modo === "cliente") {
+      const r = await client.chat.completions.create({
+        model: MODELO,
+        max_tokens: 8000,
+        temperature: 0.3,
+        messages: [{ role: "system", content: promptRelatorio(modo) }, { role: "user", content: `CONTEÚDO:\n${texto}` }],
+      });
+      const rel = (r.choices[0].message.content ?? "").replace(/\*\*(.+?)\*\*/g, "$1").replace(/^#+\s*/gm, "").trim();
+      return NextResponse.json({ texto: rel, alteracoes: [] });
+    }
     const r = await client.chat.completions.create({
       model: MODELO,
       max_tokens: 12000,

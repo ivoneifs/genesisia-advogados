@@ -3,6 +3,7 @@ import { getSession } from "@/lib/session";
 import { bloqueioApi } from "@/lib/modulos-server";
 import { rateLimit } from "@/lib/rate-limit";
 import { clienteIA, erroIA, MODELO, semChave } from "@/lib/ai/openai";
+import { promptEspecialista } from "@/lib/ai/especialista";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -39,7 +40,10 @@ export async function POST(req: NextRequest) {
   const hoje = new Date().toLocaleDateString("pt-BR");
   const especialidade = area === "trabalhista" ? "direito e cálculos trabalhistas (CLT, TST, liquidação de sentença)" : "direito previdenciário (RGPS e RPPS) e cálculos previdenciários";
 
-  const system = `Você é advogado(a) sênior e perito(a) contábil especialista em ${especialidade}, atuando no sistema Genesis IA do escritório. Hoje é ${hoje}.
+  const tarefa = acao === "assistente" ? "chat" : acao.startsWith("peticao") || acao === "recurso-administrativo" || acao === "impugnacao-calculos" ? "peca" : "analise";
+  const system = `${promptEspecialista({ areas: [area === "trabalhista" ? "trabalhista" : "previdenciario"], tarefa })}
+
+Você também é perito(a) contábil especialista em ${especialidade}, atuando no sistema Genesis IA do escritório. Hoje é ${hoje}.
 Escreva em português do Brasil, com linguagem técnica e clara. Use SOMENTE os dados do cálculo fornecido; não invente números, datas ou nomes. Quando citar jurisprudência, prefira súmulas e temas repetitivos que você conhece com segurança e, para precedentes específicos, marque "(conferir)".
 Em peças processuais, escreva títulos em MAIÚSCULAS em linhas próprias e não use Markdown (#, **), para exportação ao Word; use [PREENCHER] para dados ausentes.
 Termine lembrando, em uma linha, que o conteúdo é gerado por IA e deve ser revisado por profissional habilitado.`;

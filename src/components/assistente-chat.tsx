@@ -17,10 +17,33 @@ import {
   FileDown,
   RotateCcw,
   UploadCloud,
+  Wand2,
 } from "lucide-react";
 import { baixarDocx } from "@/lib/exportar-docx";
 
-type Message = { role: "user" | "assistant"; content: string };
+type Message = { role: "user" | "assistant"; content: string; meta?: string };
+
+const AREAS_IA: [string, string][] = [
+  ["", "Especialista automático"],
+  ["civel", "Cível e processo civil"],
+  ["familia", "Família e sucessões"],
+  ["consumidor", "Consumidor"],
+  ["trabalhista", "Trabalhista"],
+  ["previdenciario", "Previdenciário"],
+  ["penal", "Penal e processo penal"],
+  ["tributario", "Tributário"],
+  ["administrativo", "Administrativo e constitucional"],
+  ["empresarial", "Empresarial"],
+  ["imobiliario", "Imobiliário e contratos"],
+  ["digital", "Digital e LGPD"],
+];
+
+const FORMATOS_RELATORIO: [string, string][] = [
+  ["relatorio", "Relatório jurídico"],
+  ["cliente", "Relatório para o cliente"],
+  ["parecer", "Parecer formal"],
+  ["executivo", "Resumo executivo"],
+];
 
 type Anexo = {
   id: string;
@@ -150,6 +173,11 @@ function tituloDocx(mensagens: Message[], indice: number) {
 export default function AssistenteChat({ anexosAtivos = true }: { anexosAtivos?: boolean }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [area, setArea] = useState("");
+  const [revisao, setRevisao] = useState(false);
+  const [melhorando, setMelhorando] = useState(false);
+  const [dicas, setDicas] = useState<string[]>([]);
+  const [gerandoRelatorio, setGerandoRelatorio] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [anexos, setAnexos] = useState<Anexo[]>([]);
@@ -229,7 +257,7 @@ export default function AssistenteChat({ anexosAtivos = true }: { anexosAtivos?:
       const res = await fetch("/api/assistente", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next, anexos: anexos.map((a) => a.id) }),
+        body: JSON.stringify({ messages: next.map(({ role, content }) => ({ role, content })), anexos: anexos.map((a) => a.id), area: area || undefined, revisao }),
       });
       const data = await res.json().catch(() => ({}));
 
@@ -238,11 +266,56 @@ export default function AssistenteChat({ anexosAtivos = true }: { anexosAtivos?:
         return;
       }
 
-      setMessages([...next, { role: "assistant", content: data.reply }]);
+      const meta = [data.areas?.length ? `Especialista: ${data.areas.join(" e ")}` : "", data.revisado ? "revisado por revisor sênior" : ""].filter(Boolean).join(" · ");
+      setMessages([...next, { role: "assistant", content: data.reply, meta }]);
+      setDicas([]);
     } catch {
       setError("Não foi possível conectar ao assistente. Verifique sua conexão.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function melhorarPedido() {
+    const texto = input.trim();
+    if (!texto || melhorando) return;
+    setMelhorando(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/ia/melhorar-prompt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texto, destino: "assistente", anexos: anexos.map((a) => a.nome) }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Erro ao melhorar o pedido.");
+      setInput(data.prompt);
+      setDicas(data.perguntas ?? []);
+      requestAnimationFrame(() => inputRef.current?.focus());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao melhorar o pedido.");
+    } finally {
+      setMelhorando(false);
+    }
+  }
+
+  async function gerarRelatorio(i: number, formato: string) {
+    setGerandoRelatorio(i);
+    setError(null);
+    try {
+      const res = await fetch("/api/ia/relatorio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texto: messages[i].content, formato }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Erro ao gerar o relatório.");
+      const nome = FORMATOS_RELATORIO.find(([v]) => v === formato)?.[1] ?? "Relatório";
+      setMessages((m) => [...m, { role: "assistant", content: data.relatorio, meta: `${nome} gerado a partir da resposta anterior` }]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao gerar o relatório.");
+    } finally {
+      setGerandoRelatorio(null);
     }
   }
 
@@ -397,8 +470,19 @@ export default function AssistenteChat({ anexosAtivos = true }: { anexosAtivos?:
                   >
                     <FileDown size={12} /> Baixar Word (.docx)
                   </button>
+                  <select
+                    value=""
+                    disabled={gerandoRelatorio !== null}
+                    onChange={(e) => e.target.value && gerarRelatorio(i, e.target.value)}
+                    className="bg-transparent text-xs text-gray-500 hover:text-[var(--brand)] cursor-pointer focus:outline-none"
+                    title="Transformar esta resposta em relatório"
+                  >
+                    <option value="">{gerandoRelatorio === i ? "Gerando relatório..." : "Transformar em relatório ▾"}</option>
+                    {FORMATOS_RELATORIO.map(([v, r]) => <option key={v} value={v}>{r}</option>)}
+                  </select>
                 </div>
               )}
+              {m.role === "assistant" && m.meta && <p className="ml-1 mt-0.5 text-[10px] text-violet-600">{m.meta}</p>}
             </div>
           </div>
         ))}
@@ -479,6 +563,18 @@ export default function AssistenteChat({ anexosAtivos = true }: { anexosAtivos?:
         </div>
       )}
 
+      <div className="px-3 pt-2 flex flex-wrap items-center gap-3 text-xs text-gray-600">
+        <select value={area} onChange={(e) => setArea(e.target.value)} className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs" title="Área de especialidade da IA">
+          {AREAS_IA.map(([v, r]) => <option key={v} value={v}>{r}</option>)}
+        </select>
+        <label className="flex items-center gap-1.5 cursor-pointer" title="Um segundo advogado sênior revisa a resposta antes de entregar (mais preciso, demora um pouco mais)">
+          <input type="checkbox" checked={revisao} onChange={(e) => setRevisao(e.target.checked)} className="accent-[var(--brand)]" />
+          Revisão dupla (mais precisa)
+        </label>
+        {dicas.length > 0 && (
+          <span className="text-[11px] text-violet-700">Para um resultado melhor, informe: {dicas.join("; ")}</span>
+        )}
+      </div>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -526,6 +622,16 @@ export default function AssistenteChat({ anexosAtivos = true }: { anexosAtivos?:
           }
           className="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] max-h-40"
         />
+        <button
+          type="button"
+          onClick={melhorarPedido}
+          disabled={melhorando || !input.trim()}
+          title="Melhorar pedido: a IA reescreve seu pedido de forma completa e detalhada"
+          className="h-10 px-2.5 flex items-center gap-1 justify-center rounded-lg border border-violet-200 bg-violet-50 text-violet-700 text-xs font-medium hover:bg-violet-100 disabled:opacity-40"
+        >
+          {melhorando ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
+          <span className="hidden sm:inline">Melhorar pedido</span>
+        </button>
         <button
           type="submit"
           disabled={loading || !input.trim() || enviando.length > 0}
