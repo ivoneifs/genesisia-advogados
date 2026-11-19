@@ -139,6 +139,10 @@ export default function CalculadoraTela({
   const [pedidoIA, setPedidoIA] = useState(String(salvo?.dados?.__ia ?? ""));
   const [carregandoIA, setCarregandoIA] = useState(false);
   const [copiado, setCopiado] = useState(false);
+  const DOCS = area === "TRABALHISTA"
+    ? [["parecer", "Parecer"], ["peticao-trabalhista", "Petição inicial (pedidos líquidos)"], ["impugnacao-calculos", "Impugnação de cálculos"]]
+    : [["parecer", "Parecer"], ["planejamento", "Explicação ao cliente"], ["peticao-concessao", "Petição inicial"], ["peticao-revisao", "Petição de revisão"], ["impugnacao-calculos", "Impugnação de cálculos"]];
+  const [docIA, setDocIA] = useState("parecer");
 
   const saida: Saida | null = useMemo(() => {
     if (calc.modo !== "form" || !calc.calcular) return null;
@@ -201,7 +205,7 @@ export default function CalculadoraTela({
       const res = await fetch("/api/prev/ia", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ area, acao: calc.modo === "ia" ? "calculadora" : "parecer", contexto, cliente: cliente?.nome }),
+        body: JSON.stringify({ area, acao: calc.modo === "ia" ? "calculadora" : docIA, contexto, cliente: cliente?.nome }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Erro na IA.");
@@ -275,9 +279,16 @@ export default function CalculadoraTela({
 
           {podeIA && (
             <div className="border-t border-gray-100 pt-4 space-y-3">
-              <button onClick={analisarIA} disabled={carregandoIA} className="flex items-center gap-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium px-4 py-2 disabled:opacity-60">
-                {carregandoIA ? <Loader2 size={14} className="animate-spin" /> : <Bot size={14} />} {calc.modo === "ia" ? "Calcular com IA" : "Analisar e redigir parecer com IA"}
-              </button>
+              <div className="flex flex-wrap gap-2">
+                {calc.modo !== "ia" && (
+                  <select value={docIA} onChange={(e) => setDocIA(e.target.value)} className="rounded-lg border border-violet-200 bg-white px-2 py-2 text-sm text-violet-700">
+                    {DOCS.map(([v, r]) => <option key={v} value={v}>{r}</option>)}
+                  </select>
+                )}
+                <button onClick={analisarIA} disabled={carregandoIA} className="flex items-center gap-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium px-4 py-2 disabled:opacity-60">
+                  {carregandoIA ? <Loader2 size={14} className="animate-spin" /> : <Bot size={14} />} {calc.modo === "ia" ? "Calcular com IA" : "Gerar com IA"}
+                </button>
+              </div>
               {textoIA && (
                 <div className="rounded-lg border border-violet-200 bg-violet-50/40 p-3">
                   <div className="flex gap-3 justify-end text-xs text-gray-500 mb-2">

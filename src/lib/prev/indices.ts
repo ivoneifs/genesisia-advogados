@@ -3,7 +3,7 @@
 
 import { compN, deCompN } from "./datas";
 
-export type SerieIndice = "INPC" | "IPCA" | "IPCAE" | "SELIC";
+export type SerieIndice = "INPC" | "IPCA" | "IPCAE" | "SELIC" | "TR";
 export type Indices = Partial<Record<SerieIndice, Record<string, number>>>;
 
 export const NOMES_INDICE: Record<SerieIndice, string> = {
@@ -11,6 +11,7 @@ export const NOMES_INDICE: Record<SerieIndice, string> = {
   IPCA: "IPCA (IBGE)",
   IPCAE: "IPCA-E (IBGE)",
   SELIC: "Selic acumulada no mês",
+  TR: "Taxa Referencial (TR)",
 };
 
 /** Código da série no SGS do Banco Central. */
@@ -19,6 +20,7 @@ export const CODIGO_SGS: Record<SerieIndice, number> = {
   IPCA: 433,
   IPCAE: 10764,
   SELIC: 4390,
+  TR: 7811,
 };
 
 export function taxa(indices: Indices, serie: SerieIndice, comp: string): number {
