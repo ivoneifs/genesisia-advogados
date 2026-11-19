@@ -100,6 +100,7 @@ export default async function ProcessoDetalhePage({
               : "—"
           }
         />
+        <Info label="Papel do cliente" value={processo.papelCliente ?? "—"} />
         <Info label="Parte contrária" value={processo.parteContraria ?? "—"} />
         <Info
           label="Responsável"

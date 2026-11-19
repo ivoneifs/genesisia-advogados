@@ -15,9 +15,10 @@ export async function GET(req: NextRequest) {
 
   const status = req.nextUrl.searchParams.get("status") ?? "TODOS";
   const q = req.nextUrl.searchParams.get("q") ?? undefined;
+  const papel = req.nextUrl.searchParams.get("papel") ?? undefined;
 
   const processos = await prisma.processo.findMany({
-    where: whereProcessos(session.escritorioId, status, q),
+    where: whereProcessos(session.escritorioId, status, q, papel),
     orderBy: { createdAt: "desc" },
     select: {
       numero: true,
@@ -26,6 +27,7 @@ export async function GET(req: NextRequest) {
       tribunal: true,
       vara: true,
       parteContraria: true,
+      papelCliente: true,
       advogados: true,
       cliente: { select: { nome: true } },
     },
@@ -37,11 +39,12 @@ export async function GET(req: NextRequest) {
     return `"${t.replace(/"/g, '""')}"`;
   };
   const linhas = [
-    ["Número", "Cliente", "Parte contrária", "Área", "Status", "Tribunal/Vara", "Advogados"].join(";"),
+    ["Número", "Cliente", "Papel do cliente", "Parte contrária", "Área", "Status", "Tribunal/Vara", "Advogados"].join(";"),
     ...processos.map((p) =>
       [
         p.numero,
         p.cliente.nome,
+        p.papelCliente,
         p.parteContraria,
         p.area,
         p.status,

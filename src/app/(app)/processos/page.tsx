@@ -10,20 +10,21 @@ import { ultimaImportacao } from "@/lib/importacao-oab";
 import { requireEscritorioId } from "@/lib/session";
 import { parseAdvogados, formatOab } from "@/lib/advogados";
 import { STATUS_INATIVOS, whereProcessos } from "@/lib/processos-filtro";
+import { GRUPOS_PAPEIS } from "@/lib/papeis-processuais";
 
 const POR_PAGINA = 50;
 
 export default async function ProcessosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; q?: string; p?: string }>;
+  searchParams: Promise<{ status?: string; q?: string; p?: string; papel?: string }>;
 }) {
-  const { status, q, p: paginaParam } = await searchParams;
+  const { status, q, p: paginaParam, papel } = await searchParams;
   const currentStatus = status ?? "TODOS";
   const pagina = Math.max(1, Number.parseInt(paginaParam ?? "1", 10) || 1);
   const escritorioId = await requireEscritorioId();
   const assistenteAtivo = ativo(await modulosDesativados(), "assistente.anexos");
-  const where = whereProcessos(escritorioId, currentStatus, q);
+  const where = whereProcessos(escritorioId, currentStatus, q, papel);
 
   const [total, processos] = await Promise.all([
     prisma.processo.count({ where }),
@@ -36,7 +37,7 @@ export default async function ProcessosPage({
     }),
   ]);
   const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
-  const filtroQs = { status: currentStatus, ...(q ? { q } : {}) };
+  const filtroQs = { status: currentStatus, ...(q ? { q } : {}), ...(papel ? { papel } : {}) };
   const urlPagina = (n: number) =>
     `/processos?${new URLSearchParams({ ...filtroQs, p: String(n) })}`;
 
@@ -112,6 +113,29 @@ export default async function ProcessosPage({
             className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400"
           />
         </div>
+        <div className="relative">
+          <select
+            name="papel"
+            defaultValue={papel ?? ""}
+            title="Filtrar pelo papel do cliente no processo"
+            className="appearance-none rounded-lg border border-gray-300 bg-white pl-3 pr-8 py-2.5 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] max-w-[220px]"
+          >
+            <option value="">PAPEL DO CLIENTE: TODOS</option>
+            <option value="SEM">Sem papel informado</option>
+            {GRUPOS_PAPEIS.map((g) => (
+              <optgroup key={g.grupo} label={g.grupo}>
+                <option value={`grupo:${g.grupo}`}>Todo o grupo: {g.grupo}</option>
+                {g.papeis.map((x) => (
+                  <option key={x} value={x}>{x}</option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+          <ChevronDown
+            size={14}
+            className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+          />
+        </div>
         <button
           type="submit"
           className="rounded-lg bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium px-4 py-2.5 transition-colors"
@@ -145,6 +169,11 @@ export default async function ProcessosPage({
                     className="font-medium text-gray-900 hover:text-[var(--brand)] block"
                   >
                     <SituacaoTag status={p.status} /> {p.cliente.nome}
+                    {p.papelCliente && (
+                      <span className="ml-1 align-middle text-[10px] font-medium rounded-full bg-indigo-50 text-indigo-700 px-2 py-0.5">
+                        {p.papelCliente}
+                      </span>
+                    )}
                     {p.parteContraria && (
                       <span className="font-normal text-gray-500">
                         {" "}

@@ -24,6 +24,7 @@ export default async function PecasPage({
         vara: true,
         tribunal: true,
         parteContraria: true,
+        papelCliente: true,
         clienteId: true,
         advogados: true,
       },
